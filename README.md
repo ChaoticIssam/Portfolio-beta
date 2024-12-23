@@ -10,7 +10,7 @@ This will be my second attempt on creating a 3D computer graphics in a web brows
 
 1. Clone the repository:
 	```sh
-	git clone https://github.com/yourusername/portfolio-beta.git
+	git clone https://github.com/ChaoticIssam/portfolio-beta.git
 	```
 2. Navigate to the project directory:
 	```sh
