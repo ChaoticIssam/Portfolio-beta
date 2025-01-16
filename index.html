@@ -10,7 +10,7 @@
 			margin: 0;
 			padding: 0;
 			font-family: Arial, sans-serif;
-			overflow: scroll;
+			/* overflow: scroll; */
 			background-color: black;
 		}
 	</style>
@@ -18,10 +18,29 @@
 <body>
 	<div id="myElement"></div>
 	<div id="container"></div>
-	<div id="biosScreen">
+	<!-- <div id="biosScreen">
 		<pre id="biosMessages"></pre>
 		<p id="progressBar"></p>
-	</div>
+	</div> -->
+		<div id="portfolioContent">
+			<div class="portfolio-container">
+				<p id='myName'>ISSAM ZITOUNI <span id='exp'>Software Engineer</span></p>
+				<nav class="main-nav">
+					<button data-section="about" onclick="console.log('About clicked')">
+						ABOUT
+					</button>
+					<button data-section="projects" onclick="console.log('Projects clicked')">
+						PROJECTS
+					</button>
+					<button data-section="contact" onclick="console.log('Contact clicked')">
+						CONTACT
+					</button>
+				</nav>
+			</div>
+		</div>
+    </div>
+
+	<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 	<script type="module" src="/srcs/main.js"></script>
 </body>
 </html>
