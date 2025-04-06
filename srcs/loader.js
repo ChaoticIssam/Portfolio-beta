@@ -1,18 +1,20 @@
 export class BIOSLoading {
 	constructor(){
+		this.currentdate = null;
+		this.timeInMilliseconds = null;
 		this.messages = [
-			"Issam Released,				      07/25/2001",
-			"Studying Software Engineering 2022-2024 at LEET aka 1337",
-			"Checking For Potato PCs:		        14000 OK",
-			"Ready To Load Portfolio",
+			"ISSAM RELEASED,				      07/25/2001",
+			"STUDYING SOFTWARE ENGINEERING 2022-2024 AT LEET AKA 1337",
+			"CHECKING FOR POTATO PCS:		        14000 OK",
+			"READY TO LOAD PORTFOLIO",
 			"LOADING RESOURCES...",
-			"Loading 3D Models... 53%",
-			"Loading Textures... 67%",
-			"Loading Sounds... 71%",
-			"Loading Images... 89%",
-			"Loading Fonts... 92%",
-			"Loading Scripts... 100%",
-			"All Resources Loaded Successfully.",
+			"LOADING 3D MODELS... 53%",
+			"LOADING TEXTURES... 67%",
+			"LOADING SOUNDS... 71%",
+			"LOADING IMAGES... 89%",
+			"LOADING FONTS... 92%",
+			"LOADING SCRIPTS... 100%",
+			"ALL RESOURCES LOADED SUCCESSFULLY.",
 		];
 		this.currentMessageIndex = 0;
 		this.biosMessagesElement = document.getElementById("biosMessages");
@@ -21,6 +23,10 @@ export class BIOSLoading {
 	displayMessage(message){
 		return new Promise((resolve) => {
 			let i = 0;
+			this.currentdate = new Date();
+			this.timeInMilliseconds =">" + this.currentdate.getHours().toString().padStart(2, "0") + ":" 
+			+ this.currentdate.getMinutes().toString().padStart(2, "0") + ":" + this.currentdate.getSeconds().toString().padStart(2, "0");
+			message = `${this.timeInMilliseconds} : ${message}`;
 			const interval = setInterval(() => {
 				this.biosMessagesElement.textContent += message[i];
 				i++;
@@ -29,7 +35,7 @@ export class BIOSLoading {
 					this.biosMessagesElement.textContent += "\n";
 					resolve();
 				}
-			}, 10);
+			}, 0.5);//change it to 20 when you are done
 		});
 	}
 	async start(){
