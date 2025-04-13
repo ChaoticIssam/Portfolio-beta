@@ -34,15 +34,26 @@ export class Portfolio{
         this.animate = this.animate.bind(this);
 		this.handleHover = this.handleHover.bind(this);
 
+		this.clock = new THREE.Clock();
+		this.timeText = null;
+		this.computerModel = null;
+
+		this.handleClick = this.handleClick.bind(this);
+		this.bulbLight = null;
+
 	}
 
 	createScreenTexture() {
 		this.portfolioContent = document.getElementById('portfolioContent');
 		
 		const options = {
-			scale: 1,
+			scale: 2,
 			useCORS: true,
 			backgroundColor: null,
+			logging: false,
+			width: this.portfolioContent.offsetWidth,
+			height: this.portfolioContent.offsetHeight,
+			setPixelRatio: window.devicePixelRatio * 2
 		};
 	
 		html2canvas(this.portfolioContent, options).then(canvas => {
@@ -51,21 +62,151 @@ export class Portfolio{
 			this.portfolioTexture.wrapS = THREE.RepeatWrapping;
 			this.portfolioTexture.wrapT = THREE.RepeatWrapping;
 			this.portfolioTexture.repeat.set(1, -1);
+
+			this.portfolioTexture.encoding = THREE.sRGBEncoding;
+			this.portfolioTexture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+			this.portfolioTexture.minFilter = THREE.LinearFilter;
+			this.portfolioTexture.magFilter = THREE.LinearFilter;
 			
 			if (this.screenMesh) {
 				const screenMaterial = new THREE.MeshStandardMaterial({
 					map: this.portfolioTexture,
 					emissive: 0xffffff,
 					emissiveMap: this.portfolioTexture,
-					emissiveIntensity: 0.8,
+					emissiveIntensity: 0.5,
 					metalness: 0.1,
-					roughness: 0.2
+					roughness: 0.2,
+					envMapIntensity: 1.5
 				});
 				
 				this.screenMesh.material = screenMaterial;
 			}
 		});
     }
+
+	createDateNameDisplay() {
+		const canvas = document.createElement('canvas');
+		canvas.width = 600;
+		canvas.height = 256;
+		const context = canvas.getContext('2d');
+		
+		const texture = new THREE.CanvasTexture(canvas);
+		const material = new THREE.MeshBasicMaterial({
+			map: texture,
+			transparent: true,
+			opacity: 0.9,
+			// side: THREE.DoubleSide
+		});
+		
+		const geometry = new THREE.PlaneGeometry(12, 6);
+		this.timeText = new THREE.Mesh(geometry, material);
+		this.timeText.position.set(10, 20, 50);
+		this.timeText.rotation.y = Math.PI * 0.5;
+		this.scene.add(this.timeText);
+		
+		// Function to update time
+		const updateTime = () => {
+			const date = new Date();
+			const time = date.toLocaleTimeString();
+			
+			// Clear canvas
+			context.clearRect(0, 0, canvas.width, canvas.height);
+			
+			// Draw time
+			context.fillStyle = '#ffffff';
+			context.font = 'bold 72px "Press Start 2P", "Courier New", monospace';
+			context.textAlign = 'center';
+			context.textBaseline = 'middle';
+			context.fillText(time, canvas.width/2, canvas.height/2);
+			
+			context.front = 'bold 72px "Press Start 2P", "Courier New", monospace';
+			context.fillText('ISSAM ZITOUNI', canvas.width * 1/2, canvas.height * 3/4);
+			// Update texture
+			texture.needsUpdate = true;
+		}
+		
+		// Update time every second
+		setInterval(updateTime, 1000);
+	}
+
+	createLightSwitch() {
+		const canvas = document.createElement('canvas');
+		canvas.width = 128;
+		canvas.height = 128;
+		const context = canvas.getContext('2d');
+		
+		const texture = new THREE.CanvasTexture(canvas);
+		const material = new THREE.MeshBasicMaterial({
+			map: texture,
+			transparent: true,
+			opacity: 0.9,
+		});
+		
+		const geometry = new THREE.CircleGeometry(2, 32);
+		this.lightSwitch = new THREE.Mesh(geometry, material);
+		
+		// Position near the lamp
+		this.lightSwitch.position.set(45, 20, -40);
+		this.lightSwitch.rotation.y = Math.PI * 0.25;
+		
+		this.scene.add(this.lightSwitch);
+		
+		// Draw the switch
+		const updateSwitch = (isOn, isHovered = false) => {
+			context.clearRect(0, 0, canvas.width, canvas.height);
+			
+			context.beginPath();
+			context.arc(64, 64, isHovered ? 58 : 50, 0, Math.PI * 2);
+			context.fillStyle = '#ffffff';
+			context.fill();
+			
+			texture.needsUpdate = true;
+		}
+		
+		this.isLightOn = true;
+		updateSwitch(this.isLightOn);
+		
+		this.updateSwitch = updateSwitch;
+
+		let isHovered = false;
+		this.lightSwitch.onBeforeRender = () => {
+			const intersects = this.raycaster.intersectObject(this.lightSwitch);
+			if (intersects.length > 0 && !isHovered) {
+				isHovered = true;
+				updateSwitch(this.isLightOn, true);
+				document.body.style.cursor = 'pointer';
+			} else if (intersects.length === 0 && isHovered) {
+				isHovered = false;
+				updateSwitch(this.isLightOn, false);
+				document.body.style.cursor = 'default';
+			}
+		};
+	}
+
+	handleClick(event) {
+		const rect = this.renderer.domElement.getBoundingClientRect();
+		this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+		this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+		
+		this.raycaster.setFromCamera(this.mouse, this.camera);
+		
+		if (this.lightSwitch) {
+			const intersects = this.raycaster.intersectObject(this.lightSwitch);
+			if (intersects.length > 0) {
+				this.isLightOn = !this.isLightOn;
+				this.updateSwitch(this.isLightOn);
+				
+				// Animate light intensity
+				if (this.bulbLight) {
+					new JEASINGS.JEasing(this.bulbLight)
+						.to({
+							intensity: this.isLightOn ? 200 : 0
+						}, 500)
+						.start();
+				}
+			}
+		}
+	}
 
 	updateTexture() {
         if (this.portfolioTexture) {
@@ -91,16 +232,23 @@ export class Portfolio{
         });
     }
 
-    async start() {
-        for (const message of this.messages) {
-            await this.displayMessage(message);
-        }
-        setTimeout(() => {
-            document.getElementById('biosScreen').style.display = 'none';
-        }, 2000);
-    }
+    // async start() {
+    //     for (const message of this.messages) {
+    //         await this.displayMessage(message);
+    //     }
+    //     setTimeout(() => {
+    //         document.getElementById('biosScreen').style.display = 'none';
+    //     }, 2000);
+    // }
 	
 	init(){
+		this.renderer = new THREE.WebGLRenderer({ antialias: true });
+		this.renderer.setPixelRatio(window.devicePixelRatio);
+		this.renderer.setSize(window.innerWidth, window.innerHeight);
+		this.renderer.shadowMap.enabled = true;
+		this.renderer.toneMapping = THREE.ReinhardToneMapping;
+		this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
 		this.scene = new THREE.Scene();
 		// this.scene.background = new THREE.Color(0x2a204f);
 
@@ -151,6 +299,10 @@ export class Portfolio{
 		bulbLight.castShadow = true;
 		bulbLight.position.set(45, 20, -50);
 		this.scene.add(bulbLight);
+		this.bulbLight = bulbLight;
+
+		this.createLightSwitch();
+		this.renderer.domElement.addEventListener('click', this.handleClick);
 		
 		
 		this.floor = new THREE.Mesh(
@@ -183,17 +335,13 @@ export class Portfolio{
                     }
                 }
             });
-            
+            this.computerModel = gltf.scene;
 			gltf.scene.position.set(5, -15, 5);
 			gltf.scene.scale.set(10, 10, 10);
 			this.scene.add(gltf.scene);
+
+			this.createDateNameDisplay();
         });
-		this.renderer = new THREE.WebGLRenderer({ antialias: true });
-		this.renderer.setPixelRatio(window.devicePixelRatio);
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
-		this.renderer.shadowMap.enabled = true;
-		this.renderer.toneMapping = THREE.ReinhardToneMapping;
-		this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 		
 		this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     	this.controls.target.copy(screenCenter);
@@ -229,6 +377,13 @@ export class Portfolio{
             if (intersects.length > 0 && !this.isZoomed) {
 				this.isZoomed = true;
                 this.controls.enabled = false;
+
+				if (this.lightSwitch) {
+					const lightSwitchIntersects = this.raycaster.intersectObject(this.lightSwitch);
+					if (lightSwitchIntersects.length > 0) {
+						document.body.style.cursor = 'pointer';
+					}
+				}
 				
 				const box = new THREE.Box3().setFromObject(this.screenMesh);
 				const screenCenter = box.getCenter(new THREE.Vector3());
@@ -277,6 +432,53 @@ export class Portfolio{
             }
         }
     }
+
+	setupEntranceAnimation() {
+		// Start from a slightly closer dramatic angle
+		this.camera.position.set(160, 70, 140);
+		
+		if (this.timeText || this.lightSwitch) {
+			this.timeText.material.opacity = 0;
+			this.lightSwitch.material.opacity = 0;
+		}
+
+		new JEASINGS.JEasing(this.camera.position)
+			.to({
+				x: this.initialCameraPosition.x,
+				y: this.initialCameraPosition.y,
+				z: this.initialCameraPosition.z
+			}, 2500)
+			.start();
+	
+		// Animate camera target with matching duration
+		const targetPosition = new THREE.Vector3(5, 0, 5);
+		this.camera.lookAt(targetPosition);
+		
+		new JEASINGS.JEasing(this.controls.target)
+			.to({
+				x: targetPosition.x,
+				y: targetPosition.y,
+				z: targetPosition.z
+			}, 2500) // Matching duration for smooth synchronized movement
+			.start();
+
+		if (this.timeText) {
+			new JEASINGS.JEasing(this.timeText.material)
+				.to({
+					opacity: 0.8
+				}, 1000)
+				.delay(2000)
+				.start();
+		}
+		if (this.lightSwitch) {
+			new JEASINGS.JEasing(this.lightSwitch.material)
+				.to({
+					opacity: 0.9
+				}, 1000)
+				.delay(2500)
+				.start();
+		}
+	}
 	
 	animate(){
 		requestAnimationFrame(this.animate);
@@ -286,15 +488,6 @@ export class Portfolio{
 			this.controls.update();
         }
 
-		//smooth zoom in enterance 
-		setTimeout(() => {
-			if (this.justEntered) {
-				this.camera.position.lerp(this.startZoomposition, 0.02);
-				if (this.camera.position.distanceTo(this.startZoomposition) < 10) {
-					this.justEntered = false;
-				}
-			}
-		}, 4500);
 		if (this.screenMesh && this.portfolioContent) {
 			this.raycaster.setFromCamera(this.mouse, this.camera);
 			const intersects = this.raycaster.intersectObject(this.screenMesh);
@@ -342,5 +535,6 @@ export class Portfolio{
         }
 		this.renderer.domElement.removeEventListener('mousemove', this.handleHover);
 		// JEASINGS.removeAll();
+		this.renderer.domElement.removeEventListener('click', this.handleClick);
     }
 }

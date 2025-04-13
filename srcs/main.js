@@ -2,13 +2,24 @@ import { Portfolio } from './portfolio';
 import{ BIOSLoading } from './loader';
 import { Login } from './loginPage';
 
-const biosLoading = new BIOSLoading();
-biosLoading.start();
+// biosLoading.start();
 
 // const login = new Login();
 //wait until the user logs in
 // login.login();
-const portfolio = new Portfolio();
-portfolio.init();
-portfolio.animate();
-portfolio.updateTexture();
+async function init() {
+	const biosLoading = new BIOSLoading();
+    await biosLoading.start();
+    
+    const portfolio = new Portfolio();
+    portfolio.init();
+    
+    // Add a slight delay after the BIOS screen
+    setTimeout(() => {
+        portfolio.setupEntranceAnimation();
+        portfolio.animate();
+        portfolio.updateTexture();
+    }, 500);
+}
+
+init();
