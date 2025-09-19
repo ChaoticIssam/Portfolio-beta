@@ -41,50 +41,125 @@ export class Portfolio{
 		this.handleClick = this.handleClick.bind(this);
 		this.bulbLight = null;
 
+		this.messageListeners = new Set();
+		this.isDestroyed = false;
+		this.cleanupPromises = [];
+		this.destroy = this.destroy.bind(this);
+		this.handleClick = this.handleClick.bind(this);
+		this.handleHover = this.handleHover.bind(this);
+		this.onWindowResize = this.onWindowResize.bind(this);
+		this.animate = this.animate.bind(this);
+
+		this.isNavigating = false;
+		this.lastNavigationTime = 0;
+		this.textureUpdateTimeout = null;
+		this.screenMaterial = null;
+
 	}
+
+	// debugInteractions() {
+	// 	this.renderer.domElement.addEventListener('click', (event) => {
+	// 		const rect = this.renderer.domElement.getBoundingClientRect();
+	// 		const mouseX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+	// 		const mouseY = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+			
+	// 		this.raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), this.camera);
+			
+	// 		if (this.screenMesh) {
+	// 			const intersects = this.raycaster.intersectObject(this.screenMesh);
+				
+	// 			if (intersects.length > 0) {
+	// 				const uv = intersects[0].uv;
+	// 				const x = Math.floor(uv.x * 1024);
+	// 				const y = Math.floor(uv.y * 768); // Remove the 1 - uv.y transformation
+					
+	// 				console.log('Click detected:');
+	// 				console.log(`navig statue = ${this.isNavigating}`)
+	// 				console.log(`Mouse coords: (${event.clientX}, ${event.clientY})`);
+	// 				console.log(`Screen UV: (${uv.x.toFixed(3)}, ${uv.y.toFixed(3)})`);
+	// 				console.log(`Screen Pixels: (${x}, ${y})`);
+					
+	// 				// Store original styles
+	// 				const originalStyle = this.portfolioContent.style.cssText;
+					
+	// 				// Move content temporarily for hit testing
+	// 				this.portfolioContent.style.cssText = `
+	// 					position: fixed;
+	// 					left: 0;
+	// 					top: 0;
+	// 					visibility: visible;
+	// 					pointer-events: auto;
+	// 					transform: none;
+	// 				`;
+					
+	// 				// Try to find element at position
+	// 				const element = document.elementFromPoint(x, y);
+	// 				console.log('Raw element at point:', element?.tagName, element?.className);
+					
+	// 				if (element) {
+	// 					// Look for navigation buttons in parent elements
+	// 					const navButton = element.closest('[data-section]');
+	// 					console.log('Navigation button found:', navButton?.dataset?.section);
+						
+	// 					// Additional debugging
+	// 					if (!navButton) {
+	// 						console.log('Parent elements:', element.parentElement?.className);
+	// 						const allButtons = this.portfolioContent.querySelectorAll('[data-section]');
+	// 						console.log('Available nav buttons:', Array.from(allButtons).map(b => b.dataset.section));
+	// 					}
+	// 				}
+					
+	// 				// Restore original position
+	// 				this.portfolioContent.style.cssText = originalStyle;
+	// 			}
+	// 		}
+	// 	});
+	// }
 
 	createScreenTexture() {
 		this.portfolioContent = document.getElementById('portfolioContent');
 		
+		if (!this.portfolioContent) {
+			console.error('Portfolio content element not found');
+			return;
+		}
+
 		const options = {
 			scale: 2,
 			useCORS: true,
 			backgroundColor: null,
-			logging: false,
-			width: this.portfolioContent.offsetWidth,
-			height: this.portfolioContent.offsetHeight,
-			setPixelRatio: window.devicePixelRatio * 2
+			width: 1024,
+			height: 768,
+			logging: true
 		};
-	
-		html2canvas(this.portfolioContent, options).then(canvas => {
-			this.portfolioTexture = new THREE.CanvasTexture(canvas);
-			this.portfolioTexture.needsUpdate = true;
-			this.portfolioTexture.wrapS = THREE.RepeatWrapping;
-			this.portfolioTexture.wrapT = THREE.RepeatWrapping;
-			this.portfolioTexture.repeat.set(1, -1);
 
+		html2canvas(this.portfolioContent, options).then(canvas => {
+			if (this.portfolioTexture) {
+				this.portfolioTexture.dispose();
+			}
+
+			this.portfolioTexture = new THREE.CanvasTexture(canvas);
 			this.portfolioTexture.encoding = THREE.sRGBEncoding;
 			this.portfolioTexture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
-			this.portfolioTexture.minFilter = THREE.LinearFilter;
-			this.portfolioTexture.magFilter = THREE.LinearFilter;
+			this.portfolioTexture.needsUpdate = true;
 			
 			if (this.screenMesh) {
 				const screenMaterial = new THREE.MeshStandardMaterial({
 					map: this.portfolioTexture,
 					emissive: 0xffffff,
 					emissiveMap: this.portfolioTexture,
-					emissiveIntensity: 0.5,
-					metalness: 0.1,
-					roughness: 0.2,
-					envMapIntensity: 1.5
+					emissiveIntensity: 0.5
 				});
 				
 				this.screenMesh.material = screenMaterial;
 			}
+		}).catch(error => {
+			console.error('Error creating screen texture:', error);
 		});
-    }
+	}
 
 	createDateNameDisplay() {
+		//SES warning expected
 		const canvas = document.createElement('canvas');
 		canvas.width = 600;
 		canvas.height = 256;
@@ -183,38 +258,275 @@ export class Portfolio{
 		};
 	}
 
+	updateCurrentSection(section) {
+    	this.currentSection = section;
+	}
+
 	handleClick(event) {
+		if (this.isDestroyed || !this.screenMesh || !this.portfolioContent) return;
+		
+		console.log('Click detected:', event.clientX, event.clientY);
+		console.log('navig statue =', this.isNavigating);
+		
 		const rect = this.renderer.domElement.getBoundingClientRect();
 		this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
 		this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 		
 		this.raycaster.setFromCamera(this.mouse, this.camera);
 		
+		// Light switch handling (unchanged)
 		if (this.lightSwitch) {
-			const intersects = this.raycaster.intersectObject(this.lightSwitch);
-			if (intersects.length > 0) {
+			const lightSwitchIntersects = this.raycaster.intersectObject(this.lightSwitch);
+			if (lightSwitchIntersects.length > 0) {
 				this.isLightOn = !this.isLightOn;
 				this.updateSwitch(this.isLightOn);
 				
-				// Animate light intensity
 				if (this.bulbLight) {
 					new JEASINGS.JEasing(this.bulbLight)
-						.to({
-							intensity: this.isLightOn ? 200 : 0
-						}, 500)
+						.to({ intensity: this.isLightOn ? 200 : 0 }, 500)
 						.start();
 				}
+				return;
+			}
+		}
+		
+		// Screen content click
+		const intersects = this.raycaster.intersectObject(this.screenMesh);
+		if (intersects.length > 0) {
+			const uv = intersects[0].uv;
+			const x = Math.floor(uv.x * 1024);
+			
+			// Add this line to fix the error - store original style
+			const originalStyle = this.portfolioContent.style.cssText;
+			
+			// Fixed Y coordinate calculation
+			let y = 0;
+			if (this.currentSection === 'home') {
+				// For home section, the Y coordinate needs special handling
+				y = Math.floor((1 - uv.y) * 768);
+				console.log('Home section click detected at:', x, y);
+				
+				// *** FIXED HOME SECTION NAVIGATION ***
+				// Now use more appropriate coordinate ranges based on the log output
+				if (y >= 650 && y <= 750) { // Adjusted for observed values ~700
+					// Check X coordinate ranges for the three buttons
+					if (x >= 320 && x <= 400) {
+						console.log('Home section ABOUT button clicked');
+						this.navigateToSection('about');
+						return;
+					} else if (x >= 480 && x <= 560) {
+						console.log('Home section PROJECTS button clicked');
+						this.navigateToSection('projects');
+						return;
+					} else if (x >= 640 && x <= 720) {
+						console.log('Home section CONTACT button clicked');
+						this.navigateToSection('contact');
+						return;
+					}
+				}
+			} else {
+				// For other sections, use standard calculation
+				y = Math.floor((1 - uv.y) * 768);
+				
+				// FOR NON-HOME SECTIONS: Check if we're clicking in the top navigation area
+				if (y < 80) {
+					console.log('Click in top nav area of non-home section');
+					// Home button is on the left
+					if (x < 100) {
+						console.log('Home button area clicked');
+						this.navigateToSection('home');
+						return;
+					}
+					
+					// Other nav buttons are on the right side
+					if (x > 800 && x < 880) {
+						const sections = ['about', 'projects', 'contact'].filter(s => s !== this.currentSection);
+						if (sections.length > 0) {
+							console.log('First nav button area clicked:', sections[0]);
+							this.navigateToSection(sections[0]);
+						}
+						return;
+					}
+					
+					if (x > 880 && x < 960) {
+						const sections = ['about', 'projects', 'contact'].filter(s => s !== this.currentSection);
+						if (sections.length > 1) {
+							console.log('Second nav button area clicked:', sections[1]);
+							this.navigateToSection(sections[1]);
+						}
+						return;
+					}
+				}
+			}
+			
+			// Standard detection for all sections
+			this.portfolioContent.style.cssText = `
+				position: fixed;
+				left: 0;
+				top: 0;
+				visibility: visible;
+				pointer-events: auto;
+				transform: ${this.currentSection !== 'home' ? 'scaleY(-1)' : 'none'};
+				width: 1024px;
+				height: 768px;
+				z-index: 9999;
+			`;
+			
+			const element = document.elementFromPoint(x, y);
+			console.log('Raw element at point:', element?.tagName, element?.className);
+			
+			// Try both data-nav and data-section for maximum compatibility
+			let navButton = element?.closest('[data-nav="true"]');
+			if (!navButton) {
+				navButton = element?.closest('[data-section]');
+			}
+			
+			console.log('Navigation button found:', navButton?.dataset.section);
+			
+			this.portfolioContent.style.cssText = originalStyle;
+			
+			if (navButton?.dataset.section && window.handlePortfolioNavigation && !this.isNavigating) {
+				this.navigateToSection(navButton.dataset.section);
 			}
 		}
 	}
 
+	// Add a helper method for navigation
+	navigateToSection(section) {
+		console.log(`Navigating to section: ${section}`);
+		
+		// Force reset if navigation is stuck
+		if (this.isNavigating && Date.now() - (this.lastNavigationTime || 0) > 2000) {
+			console.log('Forcing navigation reset after timeout');
+			this.isNavigating = false;
+		}
+		
+		if (!this.isNavigating && window.handlePortfolioNavigation) {
+			// Set navigation state properly
+			this.isNavigating = true;
+			this.lastNavigationTime = Date.now();
+			
+			// Update section and handle navigation
+			this.currentSection = section;
+			
+			try {
+				window.handlePortfolioNavigation(section);
+				
+				const updateTextures = async () => {
+					try {
+						await this.updateTexture();
+						setTimeout(async () => {
+							await this.updateTexture();
+						}, 300);
+					} catch (error) {
+						console.error('Error updating texture:', error);
+					} finally {
+						// Always reset navigation state
+						setTimeout(() => {
+							this.isNavigating = false;
+							console.log('Navigation state reset');
+						}, 500);
+					}
+				};
+				
+				updateTextures();
+			} catch (error) {
+				console.error(`Navigation error: `, error);
+				this.isNavigating = false;
+			}
+		}
+	}
+
+	// Add a helper method to handle the navigation
+	// handleNavigation(section) {
+	// 	console.log('Navigating to:', section);
+		
+	// 	// Force reset if navigation is stuck
+	// 	if (this.isNavigating && Date.now() - this.lastNavigationTime > 2000) {
+	// 		this.isNavigating = false;
+	// 	}
+		
+	// 	if (!this.isNavigating && window.handlePortfolioNavigation) {
+	// 		this.isNavigating = true;
+	// 		this.lastNavigationTime = Date.now();
+	// 		this.currentSection = section;
+			
+	// 		window.handlePortfolioNavigation(section);
+			
+	// 		// Update texture with proper timing
+	// 		setTimeout(() => {
+	// 			this.updateTexture()
+	// 				.then(() => console.log('Texture updated successfully'))
+	// 				.finally(() => {
+	// 					setTimeout(() => {
+	// 						this.isNavigating = false;
+	// 						console.log('Navigation complete, state reset');
+	// 					}, 500);
+	// 				});
+	// 		}, 100);
+	// 	}
+	// }
+
 	updateTexture() {
-        if (this.portfolioTexture) {
-            html2canvas(this.portfolioContent).then(canvas => {
-                this.portfolioTexture.image = canvas;
-                this.portfolioTexture.needsUpdate = true;
-            });
-        }
+		if (!this.portfolioContent) return Promise.resolve();
+		
+		this.isUpdatingTexture = true;
+		
+		const options = {
+			scale: 0.7,
+			useCORS: true,
+			backgroundColor: null,
+			width: 1024,
+			height: 768,
+			logging: false,
+			removeContainer: true,
+        	foreignObjectRendering: false,
+			onclone: (clonedDoc) => {
+				const clonedContent = clonedDoc.getElementById('portfolioContent');
+				if (clonedContent) {
+					clonedContent.style.transform = 'none';
+				}
+			}
+
+		};
+
+		return html2canvas(this.portfolioContent, options)
+			.then(canvas => {
+				if (this.portfolioTexture) {
+					this.portfolioTexture.dispose();
+				}
+				
+				this.portfolioTexture = new THREE.CanvasTexture(canvas);
+				this.portfolioTexture.encoding = THREE.sRGBEncoding;
+				this.portfolioTexture.anisotropy = 1;
+				this.portfolioTexture.generateMipmaps = false;
+				this.portfolioTexture.flipY = false;
+				this.portfolioTexture.needsUpdate = true;
+
+				if (this.screenMesh) {
+	                if (!this.screenMaterial) {
+						this.screenMaterial = new THREE.MeshStandardMaterial({
+							map: this.portfolioTexture,
+							emissive: 0xffffff,
+							emissiveMap: this.portfolioTexture,
+							emissiveIntensity: 0.5
+						});
+						this.screenMesh.material = this.screenMaterial;
+					} else {
+						// Update existing material
+						this.screenMaterial.map = this.portfolioTexture;
+						this.screenMaterial.emissiveMap = this.portfolioTexture;
+						this.screenMaterial.needsUpdate = true;
+					}
+				}
+				return canvas;
+			})
+			.catch(error => {
+				console.error('Error creating screen texture:', error);
+			})
+			.finally(() => {
+				this.isUpdatingTexture = false;
+			});
 	}
 
 	displayMessage(message) {
@@ -341,6 +653,8 @@ export class Portfolio{
 			this.scene.add(gltf.scene);
 
 			this.createDateNameDisplay();
+			// this.debugInteractions();
+			this.setupEntranceAnimation();
         });
 		
 		this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -364,84 +678,124 @@ export class Portfolio{
 		this.camera.updateProjectionMatrix();
 		this.renderer.setSize(this.pageWidth, this.pageHeight);
 	}
-    handleHover(event) {
+	handleHover(event) {
 		const rect = this.renderer.domElement.getBoundingClientRect();
-        this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-        this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+		this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+		this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 		
-        this.raycaster.setFromCamera(this.mouse, this.camera);
-        
-        if (this.screenMesh) {
+		this.raycaster.setFromCamera(this.mouse, this.camera);
+		
+		// Light switch hover check
+		if (this.lightSwitch) {
+			const lightSwitchIntersects = this.raycaster.intersectObject(this.lightSwitch);
+			if (lightSwitchIntersects.length > 0) {
+				document.body.style.cursor = 'pointer';
+				return;
+			}
+		}
+		
+		// Screen mesh hover check
+		if (this.screenMesh) {
 			const intersects = this.raycaster.intersectObject(this.screenMesh);
-            
-            if (intersects.length > 0 && !this.isZoomed) {
-				this.isZoomed = true;
-                this.controls.enabled = false;
+			
+			if (intersects.length > 0) {
+				// Get intersection point for screen coordinates
+				const uv = intersects[0].uv;
+				const x = uv.x * 1024;
+				const y = (1 - uv.y) * 768;
 
-				if (this.lightSwitch) {
-					const lightSwitchIntersects = this.raycaster.intersectObject(this.lightSwitch);
-					if (lightSwitchIntersects.length > 0) {
-						document.body.style.cursor = 'pointer';
+				const originalLeft = this.portfolioContent.style.left;
+            	this.portfolioContent.style.left = '0';
+				
+				// Check for navigation elements
+				const element = document.elementFromPoint(x, y);
+				const navElement = element?.closest('[data-section]');
+
+				this.portfolioContent.style.left = originalLeft;
+				
+				if (navElement) {
+					document.body.style.cursor = 'pointer';
+				} else if (!this.isZoomed) {
+					document.body.style.cursor = 'default';
+					
+					// Only zoom if not already zoomed and not hovering over nav
+					if (!this.isZoomed) {
+						this.isZoomed = true;
+						this.controls.enabled = false;
+						
+						// Get screen center for zoom target
+						const box = new THREE.Box3().setFromObject(this.screenMesh);
+						const screenCenter = box.getCenter(new THREE.Vector3());
+						
+						// Zoom to screen
+						new JEASINGS.JEasing(this.camera.position)
+							.to({
+								x: this.zoomedCameraPosition.x,
+								y: this.zoomedCameraPosition.y,
+								z: this.zoomedCameraPosition.z
+							}, 1000)
+							.start();
+						
+						// Update controls target
+						new JEASINGS.JEasing(this.controls.target)
+							.to({
+								x: screenCenter.x,
+								y: screenCenter.y,
+								z: screenCenter.z
+							}, 1000)
+							.start();
 					}
 				}
-				
-				const box = new THREE.Box3().setFromObject(this.screenMesh);
-				const screenCenter = box.getCenter(new THREE.Vector3());
-				
-                // Animate camera position
-                new JEASINGS.JEasing(this.camera.position)
-				.to({
-					x: this.zoomedCameraPosition.x,
-					y: this.zoomedCameraPosition.y,
-					z: this.zoomedCameraPosition.z
-				}, 500)
-				.start();
-				
-                // Animate controls target
-				new JEASINGS.JEasing(this.controls.target)
-				.to({
-					x: screenCenter.x,
-					y: screenCenter.y,
-					z: screenCenter.z
-				}, 500)
-				.start();
-				
-            } else if (intersects.length === 0 && this.isZoomed) {
+			} else if (this.isZoomed) {
+				// Zoom out when not hovering over screen
 				this.isZoomed = false;
-                
-                // Return to initial position
-                new JEASINGS.JEasing(this.camera.position)
-				.to({
-					x: this.initialCameraPosition.x,
-					y: this.initialCameraPosition.y,
-					z: this.initialCameraPosition.z
-				}, 500)
-				.start();
+				document.body.style.cursor = 'default';
 				
-                // Reset controls target
-                new JEASINGS.JEasing(this.controls.target)
-				.to({
-					x: 0,
-					y: 0,
-					z: 0
-				}, 500)
-				.onComplete(() => {
-					this.controls.enabled = true;
-				})
-				.start();
-            }
-        }
-    }
+				new JEASINGS.JEasing(this.camera.position)
+					.to({
+						x: this.initialCameraPosition.x,
+						y: this.initialCameraPosition.y,
+						z: this.initialCameraPosition.z
+					}, 1000)
+					.start();
+				
+				new JEASINGS.JEasing(this.controls.target)
+					.to({
+						x: 5, // Match your scene center
+						y: 0,
+						z: 5
+					}, 1000)
+					.onComplete(() => {
+						this.controls.enabled = true;
+					})
+					.start();
+			}
+		}
+	}
 
 	setupEntranceAnimation() {
+		if (!this.camera || !this.controls) return;
 		// Start from a slightly closer dramatic angle
 		this.camera.position.set(160, 70, 140);
 		
-		if (this.timeText || this.lightSwitch) {
+		if (this.timeText?.material) {
 			this.timeText.material.opacity = 0;
-			this.lightSwitch.material.opacity = 0;
+			
+			new JEASINGS.JEasing(this.timeText.material)
+				.to({ opacity: 0.8 }, 1000)
+				.delay(2000)
+				.start();
 		}
-
+		
+		if (this.lightSwitch?.material) {
+			this.lightSwitch.material.opacity = 0;
+			
+			new JEASINGS.JEasing(this.lightSwitch.material)
+				.to({ opacity: 0.9 }, 1000)
+				.delay(2500)
+				.start();
+		}
+		
 		new JEASINGS.JEasing(this.camera.position)
 			.to({
 				x: this.initialCameraPosition.x,
@@ -449,8 +803,7 @@ export class Portfolio{
 				z: this.initialCameraPosition.z
 			}, 2500)
 			.start();
-	
-		// Animate camera target with matching duration
+
 		const targetPosition = new THREE.Vector3(5, 0, 5);
 		this.camera.lookAt(targetPosition);
 		
@@ -461,23 +814,6 @@ export class Portfolio{
 				z: targetPosition.z
 			}, 2500) // Matching duration for smooth synchronized movement
 			.start();
-
-		if (this.timeText) {
-			new JEASINGS.JEasing(this.timeText.material)
-				.to({
-					opacity: 0.8
-				}, 1000)
-				.delay(2000)
-				.start();
-		}
-		if (this.lightSwitch) {
-			new JEASINGS.JEasing(this.lightSwitch.material)
-				.to({
-					opacity: 0.9
-				}, 1000)
-				.delay(2500)
-				.start();
-		}
 	}
 	
 	animate(){
@@ -522,19 +858,66 @@ export class Portfolio{
 		
 	}
 	destroy() {
-        // window.removeEventListener('mousemove', this.onMouseMove);
-        // window.removeEventListener('click', this.onClick);
-        window.removeEventListener('resize', this.onWindowResize);
-        
-        // Clean up Three.js resources
-        if (this.portfolioTexture) {
-            this.portfolioTexture.dispose();
-        }
-        if (this.renderer) {
-            this.renderer.dispose();
-        }
-		this.renderer.domElement.removeEventListener('mousemove', this.handleHover);
-		// JEASINGS.removeAll();
-		this.renderer.domElement.removeEventListener('click', this.handleClick);
-    }
+		return new Promise(resolve => {
+			this.isDestroyed = true;
+
+			// Clean up message listeners first
+			if (this.messageListeners) {
+				this.messageListeners.forEach(listener => {
+					if (typeof listener.cleanup === 'function') {
+						try {
+							listener.cleanup();
+						} catch (e) {
+							console.warn('Error cleaning up listener:', e);
+						}
+					}
+				});
+				this.messageListeners.clear();
+			}
+
+			// Remove event listeners
+			window.removeEventListener('resize', this.onWindowResize);
+			
+			// Clean up renderer events
+			if (this.renderer?.domElement) {
+				this.renderer.domElement.removeEventListener('mousemove', this.handleHover);
+				this.renderer.domElement.removeEventListener('click', this.handleClick);
+			}
+			if (this.textureUpdateTimeout) {
+				clearTimeout(this.textureUpdateTimeout);
+				this.textureUpdateTimeout = null;
+			}
+
+			// Clean up Three.js resources
+			if (this.portfolioTexture) {
+				this.portfolioTexture.dispose();
+			}
+
+			// Clean up animations
+			JEASINGS.removeAll();
+
+			// Clean up renderer last
+			if (this.renderer) {
+				this.renderer.dispose();
+				if (this.renderer.domElement?.parentNode) {
+					this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+				}
+			}
+
+			// Ensure all references are cleared
+			this.camera = null;
+			this.scene = null;
+			this.renderer = null;
+			this.controls = null;
+			this.screenMesh = null;
+			this.portfolioContent = null;
+			this.portfolioTexture = null;
+			this.timeText = null;
+			this.lightSwitch = null;
+			this.bulbLight = null;
+
+			// Resolve cleanup
+			resolve();
+		});
+	}
 }

@@ -1,0 +1,13 @@
+Date: 17-09-2025
+	fix the nav logic in the display
+
+	18:14 :: back button isn't functional, need debugging
+
+Date: 18-09-2025
+	14:00 :: started again.
+	23:40 :: still need to handle the navigation between section, and the onMessage out of scoop error.
+				Also SES warnings about DatePrototype
+
+Date: 19-09-2025
+	10:22 :: started again.
+	12:10 :: smooth navigation between section done, back and forth.
