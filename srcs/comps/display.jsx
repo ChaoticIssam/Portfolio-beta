@@ -4,16 +4,24 @@ import { Portfolio } from '../portfolio';
 
 const PortfolioDisplay = () => {
     const [currentSection, setCurrentSection] = useState('home');
-    const [isAnimating, setIsAnimating] = useState(false); // Missing state
+    const [isAnimating, setIsAnimating] = useState(false);
+	const [scale, setScale] = useState(1);
 
-    // Missing handler function
-    // window.handlePortfolioNavigation = (section) => {
-		//     setIsAnimating(true);
-		//     setTimeout(() => {
-			//         setCurrentSection(section);
-			//         setIsAnimating(false);
-			//     }, 300);
-			// };
+	useEffect(() => {
+        const handleResize = () => {
+            const baseWidth = 1024;
+            const baseHeight = 768;
+            const newScale = Math.min(
+                window.innerWidth / baseWidth * 0.9,
+                window.innerHeight / baseHeight * 0.9
+            );
+            setScale(newScale > 0.3 ? newScale : 0.3); // Minimum scale
+        };
+        
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 			
     const handleNavigate = (section) => {
         console.log('React navigation called for section:', section);
@@ -92,8 +100,12 @@ const PortfolioDisplay = () => {
 				visibility: 'visible',
 				position: 'absolute',
 				left: '-9999px',
+				// Only apply transform in the actual UI, html2canvas will handle it differently
 				transform: currentSection !== 'home' ? 'scaleY(-1)' : 'none',
-				transformOrigin: 'center center' // Add this for more predictable transforms
+				transformOrigin: 'center center',
+				fontSize: `${16 * Math.max(scale, 0.5)}px`,
+				lineHeight: '1.6',
+				overflowX: 'hidden'
 			}}
 		>
 			{sections[currentSection]}

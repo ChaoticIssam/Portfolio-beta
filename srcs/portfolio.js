@@ -2,6 +2,9 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import JEASINGS from 'jeasings'
+import { TechnicolorShader } from 'three/examples/jsm/Addons.js';
+import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { viewport } from 'three/tsl';
 
 export class Portfolio{
 	constructor(){
@@ -484,7 +487,9 @@ export class Portfolio{
 			onclone: (clonedDoc) => {
 				const clonedContent = clonedDoc.getElementById('portfolioContent');
 				if (clonedContent) {
-					clonedContent.style.transform = 'none';
+					clonedContent.style.transform = this.currentSection !== 'home' ? 'none' : 'none';
+					clonedContent.style.visibility = 'visible';
+					clonedContent.style.opacity = '1';
 				}
 			}
 
@@ -543,15 +548,6 @@ export class Portfolio{
             }, 10);
         });
     }
-
-    // async start() {
-    //     for (const message of this.messages) {
-    //         await this.displayMessage(message);
-    //     }
-    //     setTimeout(() => {
-    //         document.getElementById('biosScreen').style.display = 'none';
-    //     }, 2000);
-    // }
 	
 	init(){
 		this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -561,6 +557,19 @@ export class Portfolio{
 		this.renderer.toneMapping = THREE.ReinhardToneMapping;
 		this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
+		const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+		const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+		this.isMobile = isMobile || isTouch;
+
+		if (this.isMobile){
+			console.log('mobile device detected');
+		}
+
+		this.renderer.domElement.addEventListener('touchstart', this.handleTouch.bind(this), { passive: false })
+		this.renderer.domElement.addEventListener('touchmove', (e) => {
+            if (e.cancelable) e.preventDefault();
+        }, { passive: false });
+		
 		this.scene = new THREE.Scene();
 		// this.scene.background = new THREE.Color(0x2a204f);
 
@@ -575,8 +584,8 @@ export class Portfolio{
 
 		this.camera.lookAt(screenCenter);
 
-		// const cameraHelper = new THREE.CameraHelper(this.camera);
-		// this.scene.add(cameraHelper);
+		const cameraHelper = new THREE.CameraHelper(this.camera);
+		this.scene.add(cameraHelper);
 		
 		const bluesideLight = new THREE.DirectionalLight(0x0000ff, 0.5);
 		bluesideLight.position.set(-10, 10, -5);
@@ -659,12 +668,18 @@ export class Portfolio{
 		
 		this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     	this.controls.target.copy(screenCenter);
-
 		this.controls.enableDamping = true;
 		this.controls.enableZoom = false;
 		this.controls.enableRotate = true;
 		this.controls.maxTargetRadius = 100;
 		this.controls.maxPolarAngle = Math.PI / 2;
+
+		this.controls.touches = {
+			ONE: THREE.TOUCH.ROTATE,
+			TWO: THREE.TOUCH.DOLLY_PAN
+    	};
+		this.controls.enablePan = false;
+
 		document.body.appendChild(this.renderer.domElement);
 		window.addEventListener('resize', this.onWindowResize);
 		
@@ -673,10 +688,85 @@ export class Portfolio{
 		this.portfolioContent = document.getElementById('portfolioContent');
 
 	}
-	onWindowResize(){
+
+	handleTouch(event) {
+		// Prevent default only if needed
+		if (event.cancelable) {
+			event.preventDefault();
+		}
+		
+		if (event.touches.length === 1) {
+			const touch = event.touches[0];
+			this.handleClick({
+				clientX: touch.clientX,
+				clientY: touch.clientY
+			});
+		}
+	}
+	onWindowResize() {
+		this.pageWidth = window.innerWidth;
+		this.pageHeight = window.innerHeight;
+		
+		// Update camera aspect ratio
 		this.camera.aspect = this.pageWidth / this.pageHeight;
 		this.camera.updateProjectionMatrix();
+		
+		// Update renderer size
 		this.renderer.setSize(this.pageWidth, this.pageHeight);
+		
+		// Adjust viewport scale based on device type
+		const viewportScale = Math.min(
+			window.innerWidth / 1200,
+			window.innerHeight / 800
+		) * (this.isMobile ? 0.75 : 0.85);
+		
+		// Apply scale to computer model
+		if (this.computerModel) {
+			const originalScale = 10;
+			this.computerModel.scale.set(
+				originalScale * viewportScale,
+				originalScale * viewportScale,
+				originalScale * viewportScale
+			);
+			this.computerModel.position.set(5, -15, 5);
+		}
+
+		// Update auxiliary elements' positions
+		if (this.timeText) {
+			const baseX = 10;
+			const baseY = 20;
+			const baseZ = 50;
+			
+			// Scale position proportionally to viewportScale
+			this.timeText.position.set(
+				baseX * viewportScale,
+				baseY * viewportScale,
+				baseZ * viewportScale
+			);
+		}
+		
+		// Update light switch position
+		if (this.lightSwitch) {
+			const baseX = 45;
+			const baseY = 20;
+			const baseZ = -40;
+			
+			// Scale position proportionally to viewportScale
+			this.lightSwitch.position.set(
+				baseX * viewportScale,
+				baseY * viewportScale,
+				baseZ * viewportScale
+			);
+		}
+		
+		// Update texture with debouncing to avoid too many updates
+		if (this.textureUpdateTimeout) {
+			clearTimeout(this.textureUpdateTimeout);
+		}
+		
+		this.textureUpdateTimeout = setTimeout(() => {
+			this.updateTexture();
+		}, 300);
 	}
 	handleHover(event) {
 		const rect = this.renderer.domElement.getBoundingClientRect();
@@ -817,13 +907,15 @@ export class Portfolio{
 	}
 	
 	animate(){
+		if (this.isDestroyed) return;
 		requestAnimationFrame(this.animate);
 		
 		JEASINGS.update();
+
 		if (this.controls) {
 			this.controls.update();
         }
-
+		
 		if (this.screenMesh && this.portfolioContent) {
 			this.raycaster.setFromCamera(this.mouse, this.camera);
 			const intersects = this.raycaster.intersectObject(this.screenMesh);
@@ -854,6 +946,20 @@ export class Portfolio{
 				document.body.style.cursor = 'default';
 			}
 		}
+		const isMobile = this.isMobile;
+		const isLowEnd = navigator.hardwareConcurrency <= 4;
+		
+		// Set appropriate pixel ratio
+		this.renderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio, 2));
+		
+		// Frame skipping for low-end devices (FIXED LOGIC)
+		if (isMobile && isLowEnd) {
+			this._frameCount = (this._frameCount || 0) + 1;
+			if (this._frameCount % 2 !== 0) {
+				return; // Skip rendering this frame
+			}
+		}
+
 		this.renderer.render(this.scene, this.camera);
 		
 	}

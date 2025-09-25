@@ -169,8 +169,110 @@ body {
     background-color: red;
 }
 
+/* Add these new mobile-specific rules */
+
+@media (max-width: 640px) {
+    .text-responsive-title {
+        font-size: clamp(1.8rem, 8vw, 2.5rem);
+    }
+    
+    .text-responsive-heading {
+        font-size: clamp(1.2rem, 6vw, 1.8rem);
+    }
+    
+    #portfolioContent .p-8 {
+        padding: 0.75rem;
+    }
+    
+    .main-nav {
+        gap: 10px;
+    }
+    
+    .main-nav p {
+        padding: 10px;
+        font-size: 18px;
+    }
+}
+
+/* Ensure touch targets are large enough on mobile */
+@media (hover: none) and (pointer: coarse) {
+    button, 
+    [role="button"],
+    a.button {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 0.5rem 0.75rem;
+    }
+}
+
 @keyframes blink {
 	50% {
 		opacity: 0;
 	}
+}
+
+
+/* Add these responsive styles */
+
+/* Base responsive classes */
+.text-responsive {
+  font-size: clamp(0.875rem, 2.5vw, 1.125rem);
+}
+
+.text-responsive-heading {
+  font-size: clamp(1.25rem, 4vw, 2.25rem);
+}
+
+.text-responsive-title {
+  font-size: clamp(1.75rem, 6vw, 3.75rem);
+}
+
+/* More specific media queries */
+@media (max-width: 768px) {
+    #biosScreen {
+        padding: 10px;
+    }
+    
+    #biosMessages {
+        font-size: clamp(12px, 3vw, 16px);
+    }
+    
+    .main-nav {
+        gap: 20px;
+        flex-direction: column;
+    }
+    
+    .flex.gap-8, 
+    .flex.gap-16 {
+        gap: 1rem !important;
+    }
+    
+    #portfolioContent .p-8 {
+        padding: 1rem !important;
+    }
+}
+
+/* Fix for very small screens */
+@media (max-width: 480px) {
+    body {
+        font-size: 14px;
+    }
+    
+    .main-nav {
+        gap: 10px;
+    }
+    
+    button, 
+    [role="button"],
+    a.button {
+        padding: 8px !important;
+        min-height: 40px;
+    }
+}
+
+/* Handle landscape orientation */
+@media (max-height: 500px) and (orientation: landscape) {
+    .main-nav {
+        flex-direction: row;
+    }
 }
