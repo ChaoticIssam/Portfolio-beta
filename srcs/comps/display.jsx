@@ -47,23 +47,45 @@ const PortfolioDisplay = () => {
     const sections = {
         home: (
             <div className="h-full flex flex-col p-8 bg-neutral-900/90 text-white">
-                <nav className="flex gap-16 justify-center mb-12">
-                    {['ABOUT', 'PROJECTS', 'CONTACT'].map((section) => (
-                        <button 
-                            key={section}
-                            data-section={section.toLowerCase()}
-							data-nav="true"
-							onClick={() => handleNavigate(section.toLowerCase())}
-                            className="text-lg text-white hover:text-blue-400 transition-colors relative group px-4 py-2"
-                        >
-                            {section}
-                            <span className="absolute -bottom-2 left-0 w-full h-0.5 bg-blue-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
-                        </button>
-                    ))}
+				<div
+					className="absolute inset-0 z-0"
+					style={{
+						backgroundImage: 'url("/styles/backgroundStyle.png")',
+						backgroundSize: 'cover',
+						backgroundPosition: 'center',
+						filter: 'contrast(200%) brightness(150%)', // Enhance contrast and brightness
+						mixBlendMode: 'normal'
+					}}
+					></div>
+                <nav className="flex gap-16 justify-center mb-12 relative z-10">
+					{['ABOUT', 'PROJECTS', 'CONTACT'].map((section) => {
+					const sectionLower = section.toLowerCase();
+					const isActive = currentSection === sectionLower;
+					
+					return (
+						<button 
+						key={section}
+						data-section={sectionLower}
+						data-nav="true"
+						onClick={() => handleNavigate(sectionLower)}
+						className={`text-lg transition-colors relative group px-4 py-2 ${
+							isActive ? 'text-blue-400' : 'text-white hover:text-blue-400'
+						}`}
+						style={{
+							textShadow: '0 0 10px rgba(0,0,0,0.8)',
+							fontWeight: 'bold'
+						}}
+						>
+						{section}
+						<span 
+							className={`absolute -bottom-2 left-0 w-full h-0.5 bg-blue-400 transition-transform duration-300 ${
+							isActive ? 'transform scale-x-100' : 'transform scale-x-0 group-hover:scale-x-100'
+							}`}
+						></span>
+						</button>
+					);
+					})}
                 </nav>
-                <div className="flex-1 flex items-center justify-center">
-                    <h1 className="text-6xl font-bold">Welcome</h1>
-                </div>
             </div>
         ),
         about: (

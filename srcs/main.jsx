@@ -61,13 +61,12 @@ async function init() {
         portfolio.isMobile = document.body.classList.contains('mobile-device');
         portfolio.isLowEndDevice = document.body.classList.contains('low-end-device');
         
-        await portfolio.init();
+		await portfolio.init();
         
         // Add a slight delay after the BIOS screen
         setTimeout(() => {
             portfolio.setupEntranceAnimation();
             portfolio.animate();
-            portfolio.updateTexture();
         }, 500);
     } catch(error){
         console.error('Initialization failed:', error);

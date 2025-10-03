@@ -58,107 +58,45 @@ export class Portfolio{
 		this.textureUpdateTimeout = null;
 		this.screenMaterial = null;
 
+		this.isUpdatingTexture = false;
+		this.resizeTimeout = null;
+
 	}
 
-	// debugInteractions() {
-	// 	this.renderer.domElement.addEventListener('click', (event) => {
-	// 		const rect = this.renderer.domElement.getBoundingClientRect();
-	// 		const mouseX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-	// 		const mouseY = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-			
-	// 		this.raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), this.camera);
-			
-	// 		if (this.screenMesh) {
-	// 			const intersects = this.raycaster.intersectObject(this.screenMesh);
-				
-	// 			if (intersects.length > 0) {
-	// 				const uv = intersects[0].uv;
-	// 				const x = Math.floor(uv.x * 1024);
-	// 				const y = Math.floor(uv.y * 768); // Remove the 1 - uv.y transformation
-					
-	// 				console.log('Click detected:');
-	// 				console.log(`navig statue = ${this.isNavigating}`)
-	// 				console.log(`Mouse coords: (${event.clientX}, ${event.clientY})`);
-	// 				console.log(`Screen UV: (${uv.x.toFixed(3)}, ${uv.y.toFixed(3)})`);
-	// 				console.log(`Screen Pixels: (${x}, ${y})`);
-					
-	// 				// Store original styles
-	// 				const originalStyle = this.portfolioContent.style.cssText;
-					
-	// 				// Move content temporarily for hit testing
-	// 				this.portfolioContent.style.cssText = `
-	// 					position: fixed;
-	// 					left: 0;
-	// 					top: 0;
-	// 					visibility: visible;
-	// 					pointer-events: auto;
-	// 					transform: none;
-	// 				`;
-					
-	// 				// Try to find element at position
-	// 				const element = document.elementFromPoint(x, y);
-	// 				console.log('Raw element at point:', element?.tagName, element?.className);
-					
-	// 				if (element) {
-	// 					// Look for navigation buttons in parent elements
-	// 					const navButton = element.closest('[data-section]');
-	// 					console.log('Navigation button found:', navButton?.dataset?.section);
-						
-	// 					// Additional debugging
-	// 					if (!navButton) {
-	// 						console.log('Parent elements:', element.parentElement?.className);
-	// 						const allButtons = this.portfolioContent.querySelectorAll('[data-section]');
-	// 						console.log('Available nav buttons:', Array.from(allButtons).map(b => b.dataset.section));
-	// 					}
-	// 				}
-					
-	// 				// Restore original position
-	// 				this.portfolioContent.style.cssText = originalStyle;
-	// 			}
-	// 		}
-	// 	});
-	// }
-
-	createScreenTexture() {
-		this.portfolioContent = document.getElementById('portfolioContent');
+	createCSS3DScreen() {
+		if (!this.screenMesh) return;
 		
-		if (!this.portfolioContent) {
-			console.error('Portfolio content element not found');
-			return;
-		}
-
-		const options = {
-			scale: 2,
-			useCORS: true,
-			backgroundColor: null,
-			width: 1024,
-			height: 768,
-			logging: true
-		};
-
-		html2canvas(this.portfolioContent, options).then(canvas => {
-			if (this.portfolioTexture) {
-				this.portfolioTexture.dispose();
-			}
-
-			this.portfolioTexture = new THREE.CanvasTexture(canvas);
-			this.portfolioTexture.encoding = THREE.sRGBEncoding;
-			this.portfolioTexture.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
-			this.portfolioTexture.needsUpdate = true;
-			
-			if (this.screenMesh) {
-				const screenMaterial = new THREE.MeshStandardMaterial({
-					map: this.portfolioTexture,
-					emissive: 0xffffff,
-					emissiveMap: this.portfolioTexture,
-					emissiveIntensity: 0.5
-				});
-				
-				this.screenMesh.material = screenMaterial;
-			}
-		}).catch(error => {
-			console.error('Error creating screen texture:', error);
-		});
+		// Hide the original screen mesh
+		this.screenMesh.visible = false;
+		
+		// Create a div that will act as the screen
+		const screenDiv = document.createElement('div');
+		screenDiv.style.width = '1024px';
+		screenDiv.style.height = '768px';
+		screenDiv.style.background = 'transparent';
+		screenDiv.style.pointerEvents = 'auto';
+		
+		// Clone your portfolio content
+		const contentClone = this.portfolioContent.cloneNode(true);
+		contentClone.style.transform = 'none';
+		contentClone.style.position = 'static';
+		screenDiv.appendChild(contentClone);
+		
+		// Create CSS3D object
+		this.css3DScreen = new CSS3DObject(screenDiv);
+		
+		// Position it exactly where the original screen is
+		const screenPos = new THREE.Vector3();
+		this.screenMesh.getWorldPosition(screenPos);
+		
+		this.css3DScreen.position.copy(screenPos);
+		this.css3DScreen.rotation.copy(this.screenMesh.rotation);
+		
+		// Scale appropriately (adjust as needed)
+		const scale = 0.01;
+		this.css3DScreen.scale.set(scale, scale, scale);
+		
+		this.scene.add(this.css3DScreen);
 	}
 
 	createDateNameDisplay() {
@@ -417,9 +355,9 @@ export class Portfolio{
 				
 				const updateTextures = async () => {
 					try {
-						await this.updateTexture();
+						await this.updateScreenDisplay();
 						setTimeout(async () => {
-							await this.updateTexture();
+							await this.updateScreenDisplay();
 						}, 300);
 					} catch (error) {
 						console.error('Error updating texture:', error);
@@ -440,98 +378,112 @@ export class Portfolio{
 		}
 	}
 
-	// Add a helper method to handle the navigation
-	// handleNavigation(section) {
-	// 	console.log('Navigating to:', section);
+	async updateScreenDisplay(options = {}) {
+		if (!this.portfolioContent) {
+			this.portfolioContent = document.getElementById('portfolioContent');
+			if (!this.portfolioContent) {
+				console.warn('Portfolio content element not found, retrying...');
+				// Retry after a short delay
+				setTimeout(() => {
+					this.updateScreenDisplay(options);
+				}, 500);
+				return;
+			}
+		}
 		
-	// 	// Force reset if navigation is stuck
-	// 	if (this.isNavigating && Date.now() - this.lastNavigationTime > 2000) {
-	// 		this.isNavigating = false;
-	// 	}
+		if (!this.screenMesh) {
+			console.warn('Screen mesh not found');
+			return;
+		}
 		
-	// 	if (!this.isNavigating && window.handlePortfolioNavigation) {
-	// 		this.isNavigating = true;
-	// 		this.lastNavigationTime = Date.now();
-	// 		this.currentSection = section;
-			
-	// 		window.handlePortfolioNavigation(section);
-			
-	// 		// Update texture with proper timing
-	// 		setTimeout(() => {
-	// 			this.updateTexture()
-	// 				.then(() => console.log('Texture updated successfully'))
-	// 				.finally(() => {
-	// 					setTimeout(() => {
-	// 						this.isNavigating = false;
-	// 						console.log('Navigation complete, state reset');
-	// 					}, 500);
-	// 				});
-	// 		}, 100);
-	// 	}
-	// }
-
-	updateTexture() {
-		if (!this.portfolioContent) return Promise.resolve();
+		// Prevent concurrent updates (from Phase 2)
+		if (this.isUpdatingTexture && !options.force) {
+			return;
+		}
 		
 		this.isUpdatingTexture = true;
 		
-		const options = {
-			scale: 0.7,
-			useCORS: true,
-			backgroundColor: null,
-			width: 1024,
-			height: 768,
-			logging: false,
-			removeContainer: true,
-        	foreignObjectRendering: false,
-			onclone: (clonedDoc) => {
-				const clonedContent = clonedDoc.getElementById('portfolioContent');
-				if (clonedContent) {
-					clonedContent.style.transform = this.currentSection !== 'home' ? 'none' : 'none';
-					clonedContent.style.visibility = 'visible';
-					clonedContent.style.opacity = '1';
-				}
-			}
-
-		};
-
-		return html2canvas(this.portfolioContent, options)
-			.then(canvas => {
-				if (this.portfolioTexture) {
-					this.portfolioTexture.dispose();
-				}
-				
-				this.portfolioTexture = new THREE.CanvasTexture(canvas);
-				this.portfolioTexture.encoding = THREE.sRGBEncoding;
-				this.portfolioTexture.anisotropy = 1;
-				this.portfolioTexture.generateMipmaps = false;
-				this.portfolioTexture.flipY = false;
-				this.portfolioTexture.needsUpdate = true;
-
-				if (this.screenMesh) {
-	                if (!this.screenMaterial) {
-						this.screenMaterial = new THREE.MeshStandardMaterial({
-							map: this.portfolioTexture,
-							emissive: 0xffffff,
-							emissiveMap: this.portfolioTexture,
-							emissiveIntensity: 0.5
-						});
-						this.screenMesh.material = this.screenMaterial;
-					} else {
-						// Update existing material
-						this.screenMaterial.map = this.portfolioTexture;
-						this.screenMaterial.emissiveMap = this.portfolioTexture;
-						this.screenMaterial.needsUpdate = true;
+		try {
+			const html2canvasOptions = {
+				scale: 2.7,
+				useCORS: true,
+				backgroundColor: null,
+				width: 1024,
+				height: 768,
+				logging: false,
+				removeContainer: false,
+				foreignObjectRendering: false,
+				onclone: (clonedDoc) => {
+					const clonedContent = clonedDoc.getElementById('portfolioContent');
+					if (clonedContent) {
+						clonedContent.style.transform = this.currentSection !== 'home' ? 'none' : 'none';
+						clonedContent.style.visibility = 'visible';
+						clonedContent.style.opacity = '1';
 					}
 				}
-				return canvas;
-			})
-			.catch(error => {
-				console.error('Error creating screen texture:', error);
-			})
-			.finally(() => {
-				this.isUpdatingTexture = false;
-			});
+			};
+
+			const canvas = await html2canvas(this.portfolioContent, html2canvasOptions);
+			
+			// Apply your color enhancement
+			const ctx = canvas.getContext('2d');
+			const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+			const data = imageData.data;
+			
+			for (let i = 0; i < data.length; i += 4) {
+				data[i] = Math.min(255, data[i] * 1.2);     // Red
+				data[i+1] = Math.min(255, data[i+1] * 1.2); // Green
+				data[i+2] = Math.min(255, data[i+2] * 1.2); // Blue
+			}
+			
+			ctx.putImageData(imageData, 0, 0);
+			
+			// Dispose old texture
+			if (this.portfolioTexture) {
+				this.portfolioTexture.dispose();
+			}
+			
+			// Create new texture with your colorSpace fix
+			this.portfolioTexture = new THREE.CanvasTexture(canvas);
+			this.portfolioTexture.colorSpace = 'srgb'; // Your fix!
+			this.portfolioTexture.anisotropy = 8;
+			this.portfolioTexture.flipY = false;
+			this.portfolioTexture.generateMipmaps = false;
+			this.portfolioTexture.minFilter = THREE.LinearFilter;
+			this.portfolioTexture.magFilter = THREE.LinearFilter;
+			this.portfolioTexture.needsUpdate = true;
+			
+			// Create or update material
+			if (!this.screenMaterial || options.recreateMaterial) {
+				if (this.screenMaterial) {
+					this.screenMaterial.dispose();
+				}
+				
+				this.screenMaterial = new THREE.MeshBasicMaterial({
+					map: this.portfolioTexture,
+					color: 0xffffff,
+					transparent: false,
+					alphaTest: 0.1,
+					side: THREE.FrontSide
+				});
+				
+				this.screenMesh.material = this.screenMaterial;
+				console.log('Screen material recreated');
+			} else {
+				// Just update existing material
+				this.screenMaterial.map = this.portfolioTexture;
+				this.screenMaterial.needsUpdate = true;
+				console.log('Screen texture updated');
+			}
+			
+			// Force render
+			this.renderer.render(this.scene, this.camera);
+			
+		} catch (error) {
+			console.error('Error updating screen display:', error);
+		} finally {
+			this.isUpdatingTexture = false;
+		}
 	}
 
 	displayMessage(message) {
@@ -554,7 +506,9 @@ export class Portfolio{
 		this.renderer.setPixelRatio(window.devicePixelRatio);
 		this.renderer.setSize(window.innerWidth, window.innerHeight);
 		this.renderer.shadowMap.enabled = true;
-		this.renderer.toneMapping = THREE.ReinhardToneMapping;
+		this.renderer.outputColorSpace = THREE.SRGBColorSpace; // Match your texture colorSpace
+		this.renderer.toneMapping = THREE.ACESFilmicToneMapping; // Better tone mapping
+		this.renderer.toneMappingExposure = 1.0; // Adjust if needed
 		this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 		const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -584,8 +538,8 @@ export class Portfolio{
 
 		this.camera.lookAt(screenCenter);
 
-		const cameraHelper = new THREE.CameraHelper(this.camera);
-		this.scene.add(cameraHelper);
+		// const cameraHelper = new THREE.CameraHelper(this.camera);
+		// this.scene.add(cameraHelper);
 		
 		const bluesideLight = new THREE.DirectionalLight(0x0000ff, 0.5);
 		bluesideLight.position.set(-10, 10, -5);
@@ -638,24 +592,73 @@ export class Portfolio{
 		this.floor.position.y = -14.9;
 		this.floor.receiveShadow = true;
 		// this.scene.add(this.floor);
+		this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+		this.controls.target.copy(screenCenter);
+		this.controls.enableDamping = true;
+		this.controls.enableZoom = false;
+		this.controls.enableRotate = true;
+		this.controls.maxTargetRadius = 100;
+		this.controls.maxPolarAngle = Math.PI / 2;
+
+		this.controls.touches = {
+			ONE: THREE.TOUCH.ROTATE,
+			TWO: THREE.TOUCH.DOLLY_PAN
+		};
+		this.controls.enablePan = false;
+
+		const initialTarget = new THREE.Vector3(5, 0, 5);
+    	this.controls.target.copy(initialTarget);
 		
 		const loader = new GLTFLoader();
-        loader.load('/models/wholeEnviroment.glb', (gltf) => {
+		loader.load('/models/wholeEnviroment.glb', (gltf) => {
 			gltf.scene.traverse((child) => {
 				if (child.isMesh) {
 					child.castShadow = true;
-                    if (child.name === "Plane001_2") {
+					if (child.name === "Plane001_2") {
 						this.screenMesh = child;
+
+    					this.screenMesh.visible = true;
+						
+						// Get screen properties for camera targeting
 						const box = new THREE.Box3().setFromObject(child);
 						const screenCenter = box.getCenter(new THREE.Vector3());
-
+						
+						// Update controls target
 						this.controls.target.copy(screenCenter);
 						this.camera.lookAt(screenCenter);
-
-                        this.createScreenTexture();
-                    }
-                }
-            });
+						
+						// Create screen texture
+						setTimeout(() => {
+							// Ensure portfolioContent is available before updating
+							this.portfolioContent = document.getElementById('portfolioContent');
+							if (this.portfolioContent) {
+								this.updateScreenDisplay({ recreateMaterial: true });
+							} else {
+								console.warn('portfolioContent not ready yet');
+								// Retry after DOM is ready
+								setTimeout(() => {
+									this.portfolioContent = document.getElementById('portfolioContent');
+									if (this.portfolioContent) {
+										this.updateScreenDisplay({ recreateMaterial: true });
+									}
+								}, 1000);
+							}
+						}, 500); 
+						
+						// Add screen light for better visibility
+						const screenLight = new THREE.SpotLight(0xffffff, 3, 50, Math.PI/4, 0.5, 1);
+						screenLight.position.set(
+							this.screenMesh.position.x, 
+							this.screenMesh.position.y + 10, 
+							this.screenMesh.position.z + 15
+						);
+						screenLight.target = this.screenMesh;
+						screenLight.castShadow = false;
+						this.scene.add(screenLight);
+						this.screenLight = screenLight;
+					}
+				}
+			});
             this.computerModel = gltf.scene;
 			gltf.scene.position.set(5, -15, 5);
 			gltf.scene.scale.set(10, 10, 10);
@@ -666,20 +669,6 @@ export class Portfolio{
 			this.setupEntranceAnimation();
         });
 		
-		this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-    	this.controls.target.copy(screenCenter);
-		this.controls.enableDamping = true;
-		this.controls.enableZoom = false;
-		this.controls.enableRotate = true;
-		this.controls.maxTargetRadius = 100;
-		this.controls.maxPolarAngle = Math.PI / 2;
-
-		this.controls.touches = {
-			ONE: THREE.TOUCH.ROTATE,
-			TWO: THREE.TOUCH.DOLLY_PAN
-    	};
-		this.controls.enablePan = false;
-
 		document.body.appendChild(this.renderer.domElement);
 		window.addEventListener('resize', this.onWindowResize);
 		
@@ -703,24 +692,23 @@ export class Portfolio{
 			});
 		}
 	}
+
 	onWindowResize() {
 		this.pageWidth = window.innerWidth;
 		this.pageHeight = window.innerHeight;
 		
-		// Update camera aspect ratio
 		this.camera.aspect = this.pageWidth / this.pageHeight;
 		this.camera.updateProjectionMatrix();
 		
-		// Update renderer size
+		// Update both renderers
 		this.renderer.setSize(this.pageWidth, this.pageHeight);
 		
-		// Adjust viewport scale based on device type
+		// Computer model scaling (keep existing)
 		const viewportScale = Math.min(
 			window.innerWidth / 1200,
 			window.innerHeight / 800
 		) * (this.isMobile ? 0.75 : 0.85);
 		
-		// Apply scale to computer model
 		if (this.computerModel) {
 			const originalScale = 10;
 			this.computerModel.scale.set(
@@ -728,46 +716,18 @@ export class Portfolio{
 				originalScale * viewportScale,
 				originalScale * viewportScale
 			);
-			this.computerModel.position.set(5, -15, 5);
-		}
-
-		// Update auxiliary elements' positions
-		if (this.timeText) {
-			const baseX = 10;
-			const baseY = 20;
-			const baseZ = 50;
-			
-			// Scale position proportionally to viewportScale
-			this.timeText.position.set(
-				baseX * viewportScale,
-				baseY * viewportScale,
-				baseZ * viewportScale
-			);
 		}
 		
-		// Update light switch position
-		if (this.lightSwitch) {
-			const baseX = 45;
-			const baseY = 20;
-			const baseZ = -40;
-			
-			// Scale position proportionally to viewportScale
-			this.lightSwitch.position.set(
-				baseX * viewportScale,
-				baseY * viewportScale,
-				baseZ * viewportScale
-			);
+		// CHANGE: Add debouncing instead of immediate recreation
+		if (this.resizeTimeout) {
+			clearTimeout(this.resizeTimeout);
 		}
 		
-		// Update texture with debouncing to avoid too many updates
-		if (this.textureUpdateTimeout) {
-			clearTimeout(this.textureUpdateTimeout);
-		}
-		
-		this.textureUpdateTimeout = setTimeout(() => {
-			this.updateTexture();
-		}, 300);
+		this.resizeTimeout = setTimeout(() => {
+			this.updateScreenDisplay({ recreateMaterial: false });
+		}, 250); // Wait 250ms after resize stops
 	}
+
 	handleHover(event) {
 		const rect = this.renderer.domElement.getBoundingClientRect();
 		this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -989,6 +949,7 @@ export class Portfolio{
 				this.renderer.domElement.removeEventListener('mousemove', this.handleHover);
 				this.renderer.domElement.removeEventListener('click', this.handleClick);
 			}
+			
 			if (this.textureUpdateTimeout) {
 				clearTimeout(this.textureUpdateTimeout);
 				this.textureUpdateTimeout = null;
@@ -1002,11 +963,18 @@ export class Portfolio{
 			// Clean up animations
 			JEASINGS.removeAll();
 
-			// Clean up renderer last
+			// Clean up both renderers
 			if (this.renderer) {
 				this.renderer.dispose();
 				if (this.renderer.domElement?.parentNode) {
 					this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+				}
+			}
+			
+			// Clean up CSS3D renderer
+			if (this.css3DRenderer) {
+				if (this.css3DRenderer.domElement?.parentNode) {
+					this.css3DRenderer.domElement.parentNode.removeChild(this.css3DRenderer.domElement);
 				}
 			}
 
@@ -1014,6 +982,7 @@ export class Portfolio{
 			this.camera = null;
 			this.scene = null;
 			this.renderer = null;
+			this.css3DRenderer = null;
 			this.controls = null;
 			this.screenMesh = null;
 			this.portfolioContent = null;

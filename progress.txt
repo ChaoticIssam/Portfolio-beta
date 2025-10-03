@@ -11,3 +11,10 @@ Date: 18-09-2025
 Date: 19-09-2025
 	10:22 :: started again.
 	12:10 :: smooth navigation between section done, back and forth.
+
+latest commit: 
+	commit 176bf30a982c38727388853a2de1ba73459c47dc (HEAD -> main)
+	Author: ChaoticIssam <issamzitouni257@gmail.com>
+	Date:   Thu Sep 25 21:17:39 2025 +0100
+
+	getting there

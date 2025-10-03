@@ -17,20 +17,33 @@ const SectionNav = ({currentSection, onNavigate }) => {
                 <span className="hidden sm:inline">Home</span> {/* Hide text on very small screens */}
             </button>
             <div className="flex gap-2 sm:gap-6"> {/* Reduce gap on mobile */}
-                {['ABOUT', 'PROJECTS', 'CONTACT'].map((section) => (
-                    section.toLowerCase() !== currentSection && (
-                        <button
-                            key={section}
-                            data-nav="true"
-                            data-section={section.toLowerCase()}
-                            onClick={() => onNavigate(section.toLowerCase())}
-                            className="text-white hover:text-blue-400 transition-colors text-sm sm:text-base"
-                            style={{ padding: "0.5rem", minWidth: "60px" }}
-                        >
-                            {section}
-                        </button>
-                    )
-                ))}
+				{['ABOUT', 'PROJECTS', 'CONTACT'].map((section) => {
+				const sectionLower = section.toLowerCase();
+				const isActive = currentSection === sectionLower;
+				
+				return (
+					<button 
+					key={section}
+					data-section={sectionLower}
+					data-nav="true"
+					onClick={() => onNavigate(sectionLower)}
+					className={`text-lg transition-colors relative group px-4 py-2 ${
+						isActive ? 'text-blue-400' : 'text-white hover:text-blue-400'
+					}`}
+					style={{
+						textShadow: '0 0 10px rgba(0,0,0,0.8)',
+						fontWeight: 'bold'
+					}}
+					>
+					{section}
+					<span 
+						className={`absolute -bottom-2 left-0 w-full h-0.5 bg-blue-400 transition-transform duration-300 ${
+						isActive ? 'transform scale-x-100' : 'transform scale-x-0 group-hover:scale-x-100'
+						}`}
+					></span>
+					</button>
+				);
+				})}
             </div>
         </div>
     )
