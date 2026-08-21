@@ -1,9 +1,21 @@
 {
+  "name": "portfolio-beta",
+  "version": "0.1.0",
+  "description": "3D portfolio using Three.js and React",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "audit-fix": "npm audit fix"
+  },
   "dependencies": {
     "@tailwindcss/postcss": "^4.0.6",
     "@tailwindcss/vite": "^4.0.6",
     "@tweenjs/tween.js": "^25.0.0",
-    "react-dom": "^19.1.1",
+    "html2canvas": "^1.4.1",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
     "three": "^0.171.0"
   },
   "devDependencies": {

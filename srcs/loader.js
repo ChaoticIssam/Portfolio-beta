@@ -35,15 +35,23 @@ export class BIOSLoading {
 					this.biosMessagesElement.textContent += "\n";
 					resolve();
 				}
-			}, 0.5);//change it to 20 when you are done
+			}, 20); // Fixed from 0.5ms to 20ms
 		});
 	}
 	async start(){
 		for (const message of this.messages) {
 			await this.displayMessage(message);
 		}
-		setTimeout(() => {
-			document.getElementById('biosScreen').style.display = 'none';
-		}, 2000);
+		// Hide the BIOS screen after messages complete
+		const biosScreen = document.getElementById('biosScreen');
+		if (biosScreen) {
+			setTimeout(() => {
+				biosScreen.style.display = 'none';
+			}, 1000);
+		}
+		// Safety timeout - ensure loading finishes within 15 seconds max
+		return new Promise((resolve) => {
+			setTimeout(() => resolve(), 3000);
+		});
 	}
 }

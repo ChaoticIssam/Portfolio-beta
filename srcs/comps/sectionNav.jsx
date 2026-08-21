@@ -1,51 +1,51 @@
-import React from 'react'
+import React from 'react';
 
-const SectionNav = ({currentSection, onNavigate }) => {
+const SectionNav = ({ currentSection, onNavigate, isMuted, onToggleAudio }) => {
     return (
-        <div className="absolute top-4 left-0 w-full flex justify-between items-center px-8">
+        <div className="absolute top-6 left-0 w-full flex justify-between items-center px-16 z-30 pointer-events-auto">
             <button
                 data-nav="true"
                 data-action="back"
                 data-section="home"
                 onClick={() => onNavigate('home')}
-                className="flex items-center text-white hover:text-blue-400 transition-colors"
-                style={{ minWidth: "80px" }} // Add minimum width for consistency
+                className="text-cyan-400 hover:text-cyan-300 font-mono font-bold text-xs tracking-[0.2em] transition-colors"
             >
-                <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                <span className="hidden sm:inline">Home</span> {/* Hide text on very small screens */}
+                &larr; BACK TO HOME
             </button>
-            <div className="flex gap-2 sm:gap-6"> {/* Reduce gap on mobile */}
-				{['ABOUT', 'PROJECTS', 'CONTACT'].map((section) => {
-				const sectionLower = section.toLowerCase();
-				const isActive = currentSection === sectionLower;
-				
-				return (
-					<button 
-					key={section}
-					data-section={sectionLower}
-					data-nav="true"
-					onClick={() => onNavigate(sectionLower)}
-					className={`text-lg transition-colors relative group px-4 py-2 ${
-						isActive ? 'text-blue-400' : 'text-white hover:text-blue-400'
-					}`}
-					style={{
-						textShadow: '0 0 10px rgba(0,0,0,0.8)',
-						fontWeight: 'bold'
-					}}
-					>
-					{section}
-					<span 
-						className={`absolute -bottom-2 left-0 w-full h-0.5 bg-blue-400 transition-transform duration-300 ${
-						isActive ? 'transform scale-x-100' : 'transform scale-x-0 group-hover:scale-x-100'
-						}`}
-					></span>
-					</button>
-				);
-				})}
-            </div>
+
+            <nav className="flex items-center gap-8">
+                {['ABOUT', 'PROJECTS', 'CONTACT'].map((section) => {
+                    const secLower = section.toLowerCase();
+                    const isActive = currentSection === secLower;
+                    return (
+                        <button
+                            key={section}
+                            data-nav="true"
+                            data-section={secLower}
+                            onClick={() => onNavigate(secLower)}
+                            className={`text-xs font-mono font-bold tracking-[0.2em] transition-all pb-1 ${
+                                isActive
+                                    ? 'text-cyan-400 border-b-2 border-cyan-400'
+                                    : 'text-neutral-500 hover:text-white'
+                            }`}
+                        >
+                            {section}
+                        </button>
+                    );
+                })}
+
+                {onToggleAudio && (
+                    <button
+                        data-nav="true"
+                        onClick={onToggleAudio}
+                        className="text-xs font-mono font-bold tracking-widest text-neutral-400 hover:text-cyan-400 transition-colors pl-2 border-l border-neutral-800"
+                    >
+                        {isMuted ? '🔇' : '🔊'}
+                    </button>
+                )}
+            </nav>
         </div>
-    )
-}
-export default SectionNav
+    );
+};
+
+export default SectionNav;

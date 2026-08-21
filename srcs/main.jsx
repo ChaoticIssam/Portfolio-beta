@@ -1,15 +1,12 @@
+import '../portfolio.css';
 import { Portfolio } from './portfolio';
-import{ BIOSLoading } from './loader';
+import { BIOSLoading } from './loader';
 import React from 'react';
 import ReactDOM from 'react-dom/client'
 import { Login } from './loginPage';
 import PortfolioDisplay from './comps/display';
+import { soundManager } from './audioManager';
 
-// biosLoading.start();
-
-// const login = new Login();
-//wait until the user logs in
-// login.login();
 async function init() {
     try {
         if (typeof console !== 'undefined') {
@@ -42,32 +39,52 @@ async function init() {
             document.body.classList.toggle('mobile-device', isMobileDevice);
             document.body.classList.toggle('touch-device', isTouchDevice);
             document.body.classList.toggle('low-end-device', isLowEndDevice);
+
+            // Unlock Web Audio API on first user interaction
+            const unlockAudio = () => {
+                soundManager.resumeContext();
+                soundManager.startAmbient();
+                window.removeEventListener('pointerdown', unlockAudio);
+                window.removeEventListener('keydown', unlockAudio);
+            };
+            window.addEventListener('pointerdown', unlockAudio);
+            window.addEventListener('keydown', unlockAudio);
         }
         
-        const biosLoading = new BIOSLoading();
-        await biosLoading.start();
-
-        // Rest of your initialization code remains unchanged
+        // Mount React UI immediately
         ReactDOM.createRoot(document.getElementById('root')).render(
             <React.StrictMode>
                 <PortfolioDisplay />
             </React.StrictMode>
         );
         
+        // Initialize 3D Portfolio scene in parallel
         const portfolio = new Portfolio();
-        // Pass complete device info
         portfolio.deviceInfo = window.deviceInfo || {};
-        // Pass responsive info to portfolio instance
         portfolio.isMobile = document.body.classList.contains('mobile-device');
         portfolio.isLowEndDevice = document.body.classList.contains('low-end-device');
+        window.portfolioInstance = portfolio;
+        portfolio.init();
+
+        // Run BIOS loading sequence non-blocking
+        const biosLoading = new BIOSLoading();
+        biosLoading.start().then(() => {
+            soundManager.resumeContext();
+            soundManager.startAmbient();
+            setTimeout(() => {
+                soundManager.speakWelcome();
+            }, 600);
+        });
         
-		await portfolio.init();
-        
-        // Add a slight delay after the BIOS screen
+        // Safety fallback: hide BIOS overlay after 10 seconds max
         setTimeout(() => {
-            portfolio.setupEntranceAnimation();
-            portfolio.animate();
-        }, 500);
+            const biosScreen = document.getElementById('biosScreen');
+            if (biosScreen && biosScreen.style.display !== 'none') {
+                biosScreen.style.display = 'none';
+                soundManager.resumeContext();
+                soundManager.startAmbient();
+            }
+        }, 10000);
     } catch(error){
         console.error('Initialization failed:', error);
     }

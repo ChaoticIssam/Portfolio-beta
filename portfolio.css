@@ -1,4 +1,32 @@
 @import "tailwindcss";
+
+@theme {
+  --color-cyan-300: #67e8f9;
+  --color-cyan-400: #22d3ee;
+  --color-cyan-500: #06b6d4;
+  --color-cyan-600: #0891b2;
+  --color-cyan-950: #083344;
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f5f5f5;
+  --color-neutral-200: #e5e5e5;
+  --color-neutral-300: #d4d4d4;
+  --color-neutral-400: #a3a3a3;
+  --color-neutral-500: #737373;
+  --color-neutral-600: #525252;
+  --color-neutral-700: #404040;
+  --color-neutral-800: #262626;
+  --color-neutral-900: #171717;
+  --color-neutral-950: #0a0a0a;
+  --color-emerald-300: #6ee7b7;
+  --color-emerald-400: #34d399;
+  --color-emerald-500: #10b981;
+  --color-emerald-950: #022c22;
+  --color-amber-300: #fcd34d;
+  --color-amber-400: #fbbf24;
+  --color-amber-500: #f59e0b;
+  --color-amber-950: #451a03;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -83,15 +111,32 @@ body {
 
 #portfolioContent {
     position: fixed;
-	background-image: url('/public/models/backGround.jpg');
-	background-size: cover;
+    background-color: #080808;
     left: -9999px;
     width: 1024px;
     height: 768px;
-    color: white;
-    font-size: 30px;
+    color: #f1f5f9;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    letter-spacing: 0.02em;
     overflow: hidden;
     display: block;
+    box-sizing: border-box;
+}
+
+#portfolioContent p,
+#portfolioContent span,
+#portfolioContent h1,
+#portfolioContent h2,
+#portfolioContent h3,
+#portfolioContent h4,
+#portfolioContent button,
+#portfolioContent a,
+#portfolioContent div,
+#portfolioContent li,
+#portfolioContent label {
+    letter-spacing: 0.02em;
 }
 
 .portfolio-container {
@@ -275,4 +320,51 @@ body {
     .main-nav {
         flex-direction: row;
     }
+}
+
+/* Futuristic CRT Section Transition Keyframes */
+@keyframes crtSectionEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.995);
+    filter: brightness(1.4) contrast(1.1);
+  }
+  60% {
+    opacity: 0.9;
+    filter: brightness(1.15);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: brightness(1) contrast(1);
+  }
+}
+
+@keyframes scanlineFlash {
+  0% {
+    opacity: 0.35;
+    transform: translateY(-100%);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+}
+
+.crt-section-anim {
+  animation: crtSectionEnter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity, filter;
+}
+
+.scanline-sweep {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(255,255,255,0) 0%,
+    rgba(34,211,238,0.08) 50%,
+    rgba(255,255,255,0) 100%
+  );
+  animation: scanlineFlash 0.35s ease-out forwards;
 }
