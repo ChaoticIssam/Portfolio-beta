@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import SectionNav from './sectionNav';
 import { soundManager } from '../audioManager';
 
+import { projectsList, skillCategories } from './portfolioData';
+
 const PortfolioDisplay = () => {
     const [currentSection, setCurrentSection] = useState('home');
     const [scale, setScale] = useState(1);
     const [copiedEmail, setCopiedEmail] = useState(false);
-    const [isMuted, setIsMuted] = useState(soundManager.isMuted);
 
     useEffect(() => {
         const handleResize = () => {
@@ -32,12 +33,6 @@ const PortfolioDisplay = () => {
         }
     };
 
-    const toggleAudio = () => {
-        const muted = soundManager.toggleMute();
-        setIsMuted(muted);
-        soundManager.playClick();
-    };
-
     useEffect(() => {
         window.handlePortfolioNavigation = handleNavigate;
         return () => {
@@ -51,68 +46,6 @@ const PortfolioDisplay = () => {
         setCopiedEmail(true);
         setTimeout(() => setCopiedEmail(false), 2500);
     };
-
-    const projectsList = [
-        {
-            id: '3d-portfolio',
-            title: '3D WebGL · Interactive Portfolio',
-            category: '3D & Web App',
-            description: 'Interactive 3D workspace environment featuring real-time CRT screen rendering, retro BIOS boot sequence, and dynamic raycasting navigation.',
-            tech: ['Three.js', 'React 19', 'Tailwind CSS', 'Vite', 'Docker', 'Nginx'],
-            link: 'https://github.com/ChaoticIssam/portfolio-beta',
-            tagType: 'project',
-            actionText: 'View Repository'
-        },
-        {
-            id: 'vita',
-            title: 'Vita · Activity & Insights Platform',
-            category: 'Full Stack & Desktop',
-            description: 'Desktop-first digital activity tracking and productivity insights platform. FastAPI backend (SQLAlchemy, JWT) synced to an Electron background collector and Next.js web dashboard.',
-            tech: ['FastAPI', 'Next.js', 'Electron', 'PostgreSQL', 'Docker', 'JWT'],
-            link: 'https://github.com/ChaoticIssam',
-            tagType: 'project',
-            actionText: 'View Repository'
-        },
-        {
-            id: 'aittc-um6p',
-            title: 'AITTC, UM6P · Farm Digitization',
-            category: 'AITTC, UM6P • Benguerir',
-            description: 'Building a web platform to digitize farm operations and experimental data. Delivered 3 role-based workflows with containerized Docker Compose, Nginx, Django REST, and PostgreSQL.',
-            tech: ['Django REST', 'React', 'Docker Compose', 'Nginx', 'PostgreSQL'],
-            link: 'https://linkedin.com/in/issam-zitouni/',
-            tagType: 'pro',
-            actionText: 'View Experience'
-        },
-        {
-            id: 'key-system',
-            title: 'Key System · Hardware Business',
-            category: 'Key System • Casablanca',
-            description: 'Designed and developed a corporate web platform for a hardware business to improve visibility and structure product/service content for seamless customer navigation.',
-            tech: ['React', 'TypeScript', 'Tailwind CSS', 'Responsive UI', 'Nginx'],
-            link: 'https://linkedin.com/in/issam-zitouni/',
-            tagType: 'pro',
-            actionText: 'View Experience'
-        }
-    ];
-
-    const skillCategories = [
-        {
-            name: 'Languages',
-            skills: ['C', 'C++', 'Python', 'JavaScript', 'TypeScript', 'SQL']
-        },
-        {
-            name: 'Frontend & 3D',
-            skills: ['React', 'Next.js', 'Electron', 'Three.js', 'Tailwind CSS', 'HTML / CSS', 'Vite']
-        },
-        {
-            name: 'Backend & APIs',
-            skills: ['FastAPI', 'Django', 'DRF', 'Node.js', 'WebSockets', 'Django Channels']
-        },
-        {
-            name: 'Databases & DevOps',
-            skills: ['PostgreSQL', 'Redis', 'Docker', 'Docker Compose', 'Nginx', 'Linux', 'Git / GitHub']
-        }
-    ];
 
     const sections = {
         home: (
@@ -147,13 +80,6 @@ const PortfolioDisplay = () => {
                                 </button>
                             );
                         })}
-                        <button
-                            data-nav="true"
-                            onClick={toggleAudio}
-                            className="text-xs font-mono font-bold tracking-widest text-neutral-400 hover:text-cyan-400 transition-colors pl-2 border-l border-neutral-800"
-                        >
-                            {isMuted ? '🔇' : '🔊'}
-                        </button>
                     </nav>
                 </div>
 
@@ -191,7 +117,7 @@ const PortfolioDisplay = () => {
         ),
         about: (
             <div className="h-full bg-neutral-950 text-white overflow-hidden relative flex flex-col justify-between p-12">
-                <SectionNav currentSection="about" onNavigate={handleNavigate} isMuted={isMuted} onToggleAudio={toggleAudio} />
+                <SectionNav currentSection="about" onNavigate={handleNavigate} />
 
                 <div className="pt-12 px-8 pb-2 max-w-4xl mx-auto space-y-6 flex-1 flex flex-col justify-center">
                     <div className="border-b border-neutral-800/80 pb-3 flex justify-between items-end">
@@ -262,7 +188,7 @@ const PortfolioDisplay = () => {
         ),
         projects: (
             <div className="h-full bg-neutral-950 text-white overflow-hidden relative flex flex-col justify-between p-12">
-                <SectionNav currentSection="projects" onNavigate={handleNavigate} isMuted={isMuted} onToggleAudio={toggleAudio} />
+                <SectionNav currentSection="projects" onNavigate={handleNavigate} />
 
                 <div className="pt-12 px-8 pb-2 max-w-4xl mx-auto space-y-6 flex-1 flex flex-col justify-center">
                     <div className="border-b border-neutral-800/80 pb-3 flex justify-between items-end">
@@ -323,7 +249,7 @@ const PortfolioDisplay = () => {
         ),
         contact: (
             <div className="h-full bg-neutral-950 text-white overflow-hidden relative flex flex-col justify-between p-12">
-                <SectionNav currentSection="contact" onNavigate={handleNavigate} isMuted={isMuted} onToggleAudio={toggleAudio} />
+                <SectionNav currentSection="contact" onNavigate={handleNavigate} />
 
                 <div className="pt-12 px-8 pb-2 max-w-4xl mx-auto space-y-6 flex-1 flex flex-col justify-center">
                     <div className="border-b border-neutral-800/80 pb-3 flex justify-between items-end">

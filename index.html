@@ -7,7 +7,7 @@
 	<title>Issam Zitouni - Portfolio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Share+Tech+Mono&family=Space+Grotesk:wght@400;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         @keyframes blink {
             50% { opacity: 0; }
@@ -20,9 +20,34 @@
 <body class="m-0 p-0 overflow-hidden font-sans">
     <div id="container"></div>
 
-    <div id="biosScreen" class="fixed inset-0 bg-black text-lime-400 font-mono p-5 overflow-hidden z-50">
-        <pre id="biosMessages" class="whitespace-pre-wrap text-base leading-relaxed"></pre>
-        <p id="progressBar" class="text-base animate-blink"></p>
+    <div id="biosScreen" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 select-none cursor-pointer flex items-center justify-center p-4">
+        <div class="w-full max-w-2xl bg-[#0d1117] rounded-xl border border-neutral-700/80 shadow-2xl overflow-hidden flex flex-col font-mono text-lime-400">
+            <!-- iTerm macOS Title Bar -->
+            <div class="h-9 px-4 bg-[#161b22] border-b border-neutral-800 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-[#ff5f56] inline-block"></span>
+                    <span class="w-3 h-3 rounded-full bg-[#ffbd2e] inline-block"></span>
+                    <span class="w-3 h-3 rounded-full bg-[#27c93f] inline-block"></span>
+                </div>
+                <span class="text-xs text-neutral-400 font-medium tracking-wide">issam@workspace: ~ (zsh)</span>
+                <span class="text-[11px] text-neutral-500">80x24</span>
+            </div>
+
+            <!-- Terminal Body -->
+            <div class="p-5 md:p-6 min-h-[300px] flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between pb-2 mb-3 border-b border-neutral-800 text-xs text-neutral-400">
+                        <span>[SESSION: GUEST_INIT]</span>
+                        <span>STATUS: ACTIVE</span>
+                    </div>
+                    <pre id="biosMessages" class="whitespace-pre-wrap text-xs sm:text-sm leading-relaxed text-lime-400"></pre>
+                    <p id="progressBar" class="text-xs sm:text-sm animate-blink text-lime-400"></p>
+                </div>
+                <div id="biosPrompt" class="pt-4 mt-3 border-t border-neutral-800/80 text-center text-xs font-semibold tracking-wider text-lime-400/90 animate-pulse">
+                    [ FAST-BOOT: CLICK ANYWHERE OR PRESS ANY KEY ]
+                </div>
+            </div>
+        </div>
     </div>
 
 	<div id="root"></div>

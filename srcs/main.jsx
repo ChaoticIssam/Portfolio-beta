@@ -2,8 +2,7 @@ import '../portfolio.css';
 import { Portfolio } from './portfolio';
 import { BIOSLoading } from './loader';
 import React from 'react';
-import ReactDOM from 'react-dom/client'
-import { Login } from './loginPage';
+import ReactDOM from 'react-dom/client';
 import PortfolioDisplay from './comps/display';
 import { soundManager } from './audioManager';
 
@@ -70,21 +69,31 @@ async function init() {
         const biosLoading = new BIOSLoading();
         biosLoading.start().then(() => {
             soundManager.resumeContext();
+            soundManager.playIntroSound();
             soundManager.startAmbient();
+
+            if (portfolio && portfolio.startCinematicEntrance) {
+                portfolio.startCinematicEntrance();
+            }
+
             setTimeout(() => {
                 soundManager.speakWelcome();
-            }, 600);
+            }, 2000);
         });
         
-        // Safety fallback: hide BIOS overlay after 10 seconds max
+        // Safety fallback: only if something crashes, hide after 40 seconds
         setTimeout(() => {
             const biosScreen = document.getElementById('biosScreen');
             if (biosScreen && biosScreen.style.display !== 'none') {
                 biosScreen.style.display = 'none';
                 soundManager.resumeContext();
+                soundManager.playIntroSound();
                 soundManager.startAmbient();
+                if (portfolio && portfolio.startCinematicEntrance) {
+                    portfolio.startCinematicEntrance();
+                }
             }
-        }, 10000);
+        }, 40000);
     } catch(error){
         console.error('Initialization failed:', error);
     }

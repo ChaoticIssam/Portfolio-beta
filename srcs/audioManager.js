@@ -1,6 +1,7 @@
 /**
  * Web Audio API Sound & Voice Synthesizer Engine
  * High-performance, zero-latency, zero-dependency audio engine for 3D Portfolio.
+ * Gracefully respects browser autoplay policies and unlocks on first gesture.
  */
 
 class SoundEngine {
@@ -13,25 +14,111 @@ class SoundEngine {
         this.ambientOsc2 = null;
         this.ambientFilter = null;
         this.isAmbientPlaying = false;
-        this.voiceEnabled = true;
+        this.pendingIntro = false;
     }
 
     init() {
-        if (this.isInitialized) return;
+        if (this.isInitialized && this.ctx) return;
         try {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             if (!AudioContext) return;
             this.ctx = new AudioContext();
             this.isInitialized = true;
         } catch (e) {
-            console.warn('Web Audio API not supported:', e);
+            // AudioContext not available
         }
     }
 
     resumeContext() {
         if (!this.ctx) this.init();
         if (this.ctx && this.ctx.state === 'suspended') {
-            this.ctx.resume();
+            this.ctx.resume().then(() => {
+                if (this.pendingIntro) {
+                    this.pendingIntro = false;
+                    this.playIntroSound();
+                    this.startAmbient();
+                }
+            }).catch(() => {});
+        }
+    }
+
+    /**
+     * Epic retro-futuristic 3D environment entrance intro sound
+     * CRT power-on ignition, ascending cyber harmonic chord, and sub-bass resonance.
+     */
+    playIntroSound() {
+        if (this.isMuted) return;
+        this.resumeContext();
+        if (!this.ctx || this.ctx.state === 'suspended') {
+            this.pendingIntro = true;
+            return;
+        }
+
+        try {
+            const now = this.ctx.currentTime;
+
+            // 1. Sub-bass power surge (simulating power grid & capacitor charge)
+            const subOsc = this.ctx.createOscillator();
+            const subGain = this.ctx.createGain();
+            subOsc.type = 'sine';
+            subOsc.frequency.setValueAtTime(45, now);
+            subOsc.frequency.exponentialRampToValueAtTime(95, now + 0.6);
+            subOsc.frequency.exponentialRampToValueAtTime(55, now + 1.8);
+
+            subGain.gain.setValueAtTime(0.01, now);
+            subGain.gain.linearRampToValueAtTime(0.25, now + 0.3);
+            subGain.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
+
+            subOsc.connect(subGain);
+            subGain.connect(this.ctx.destination);
+            subOsc.start(now);
+            subOsc.stop(now + 2.1);
+
+            // 2. High-voltage CRT degauss sparkle / sweep
+            const sparkOsc = this.ctx.createOscillator();
+            const sparkGain = this.ctx.createGain();
+            const sparkFilter = this.ctx.createBiquadFilter();
+
+            sparkOsc.type = 'sawtooth';
+            sparkOsc.frequency.setValueAtTime(1200, now);
+            sparkOsc.frequency.exponentialRampToValueAtTime(2800, now + 0.25);
+            sparkOsc.frequency.exponentialRampToValueAtTime(400, now + 0.9);
+
+            sparkFilter.type = 'bandpass';
+            sparkFilter.frequency.setValueAtTime(2200, now);
+            sparkFilter.Q.setValueAtTime(4.0, now);
+
+            sparkGain.gain.setValueAtTime(0.01, now);
+            sparkGain.gain.linearRampToValueAtTime(0.12, now + 0.15);
+            sparkGain.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+
+            sparkOsc.connect(sparkFilter);
+            sparkFilter.connect(sparkGain);
+            sparkGain.connect(this.ctx.destination);
+            sparkOsc.start(now);
+            sparkOsc.stop(now + 0.95);
+
+            // 3. Ascending harmonic cyber chord (C3 - G3 - C4 - E4 - G4 - C5)
+            const chord = [130.81, 196.00, 261.63, 329.63, 392.00, 523.25];
+            chord.forEach((freq, idx) => {
+                const noteTime = now + 0.2 + idx * 0.11;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = idx % 2 === 0 ? 'sine' : 'triangle';
+                osc.frequency.setValueAtTime(freq, noteTime);
+
+                gain.gain.setValueAtTime(0.01, noteTime);
+                gain.gain.linearRampToValueAtTime(0.14, noteTime + 0.08);
+                gain.gain.exponentialRampToValueAtTime(0.001, noteTime + 1.4);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(noteTime);
+                osc.stop(noteTime + 1.5);
+            });
+        } catch (e) {
+            // Audio play skipped
         }
     }
 
@@ -41,7 +128,7 @@ class SoundEngine {
     startAmbient() {
         if (this.isMuted || this.isAmbientPlaying) return;
         this.resumeContext();
-        if (!this.ctx) return;
+        if (!this.ctx || this.ctx.state === 'suspended') return;
 
         try {
             const now = this.ctx.currentTime;
@@ -70,7 +157,7 @@ class SoundEngine {
             // Low frequency oscillator for slow breathing filter sweep
             const lfo = this.ctx.createOscillator();
             const lfoGain = this.ctx.createGain();
-            lfo.frequency.setValueAtTime(0.15, now); // 0.15 Hz slow breath
+            lfo.frequency.setValueAtTime(0.15, now);
             lfoGain.gain.setValueAtTime(40, now);
             lfo.connect(lfoGain);
             lfoGain.connect(this.ambientFilter.frequency);
@@ -86,7 +173,7 @@ class SoundEngine {
             this.ambientOsc2.start(now);
             this.isAmbientPlaying = true;
         } catch (e) {
-            console.warn('Ambient audio error:', e);
+            // Ambient audio skipped
         }
     }
 
@@ -104,7 +191,7 @@ class SoundEngine {
                 this.isAmbientPlaying = false;
             }, 550);
         } catch (e) {
-            console.warn('Stop ambient error:', e);
+            // Stop ambient skipped
         }
     }
 
@@ -114,7 +201,7 @@ class SoundEngine {
     playClick() {
         if (this.isMuted) return;
         this.resumeContext();
-        if (!this.ctx) return;
+        if (!this.ctx || this.ctx.state === 'suspended') return;
 
         try {
             const now = this.ctx.currentTime;
@@ -147,12 +234,11 @@ class SoundEngine {
     playSectionSwitch() {
         if (this.isMuted) return;
         this.resumeContext();
-        if (!this.ctx) return;
+        if (!this.ctx || this.ctx.state === 'suspended') return;
 
         try {
             const now = this.ctx.currentTime;
 
-            // Dual tone frequency sweep
             const osc1 = this.ctx.createOscillator();
             const osc2 = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
@@ -196,7 +282,7 @@ class SoundEngine {
     playHover() {
         if (this.isMuted) return;
         this.resumeContext();
-        if (!this.ctx) return;
+        if (!this.ctx || this.ctx.state === 'suspended') return;
 
         try {
             const now = this.ctx.currentTime;
@@ -224,7 +310,7 @@ class SoundEngine {
     playSuccess() {
         if (this.isMuted) return;
         this.resumeContext();
-        if (!this.ctx) return;
+        if (!this.ctx || this.ctx.state === 'suspended') return;
 
         try {
             const now = this.ctx.currentTime;
@@ -261,7 +347,6 @@ class SoundEngine {
             utterance.pitch = 0.9;
             utterance.volume = 0.85;
 
-            // Pick an English voice if available
             const voices = window.speechSynthesis.getVoices();
             const englishVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Daniel') || v.name.includes('Natural')));
             if (englishVoice) {
@@ -270,7 +355,7 @@ class SoundEngine {
 
             window.speechSynthesis.speak(utterance);
         } catch (e) {
-            console.warn('Speech synthesis error:', e);
+            // Speech synthesis skipped
         }
     }
 

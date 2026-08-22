@@ -1,6 +1,6 @@
 import React from 'react';
 
-const SectionNav = ({ currentSection, onNavigate, isMuted, onToggleAudio }) => {
+const SectionNav = ({ currentSection, onNavigate }) => {
     return (
         <div className="absolute top-6 left-0 w-full flex justify-between items-center px-16 z-30 pointer-events-auto">
             <button
@@ -33,16 +33,6 @@ const SectionNav = ({ currentSection, onNavigate, isMuted, onToggleAudio }) => {
                         </button>
                     );
                 })}
-
-                {onToggleAudio && (
-                    <button
-                        data-nav="true"
-                        onClick={onToggleAudio}
-                        className="text-xs font-mono font-bold tracking-widest text-neutral-400 hover:text-cyan-400 transition-colors pl-2 border-l border-neutral-800"
-                    >
-                        {isMuted ? '🔇' : '🔊'}
-                    </button>
-                )}
             </nav>
         </div>
     );

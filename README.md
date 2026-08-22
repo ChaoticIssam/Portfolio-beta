@@ -45,17 +45,21 @@ An immersive, interactive **3D Developer Portfolio** built with **Three.js**, **
 ```text
 portfolio-beta/
 ├── public/
-│   ├── models/                # 3D Blender GLB/GLTF models
-│   ├── sounds/                # Retro BIOS and UI sound effects
+│   ├── models/                # 3D Blender GLB/GLTF models (wholeEnviroment.glb)
 │   └── styles/                # Background textures and visual assets
 ├── srcs/
+│   ├── audioManager.js        # Web Audio API spatial synthesizer & sound FX engine
+│   ├── deskWidgets.js         # 3D Desk widgets (7-segment clock, lamp switch, sound switch)
+│   ├── lightingManager.js     # Three.js scene lighting (ambient, directional, bulb, screen)
+│   ├── loader.js              # Interactive macOS iTerm telemetry boot loader & fast-boot
+│   ├── portfolio.js           # Core Three.js orchestrator, camera tweens & lifecycle
+│   ├── screenManager.js       # HTML-to-Canvas CRT texture rasterizer & color interceptor
 │   ├── comps/
 │   │   ├── display.jsx        # Interactive screen sections (Home, About, Projects, Contact)
+│   │   ├── portfolioData.js   # Structured project, experience & skills data
 │   │   └── sectionNav.jsx     # Monospace section navigation bar
-│   ├── images/                # Progress screenshots & Blender renders
-│   ├── portfolio.js           # Three.js scene, raycasting, camera tweens, and canvas engine
-│   └── loading.js             # Retro BIOS boot terminal sequence
-├── portfolio.css              # Typography & custom WebGL CRT screen styling
+│   └── main.jsx               # React 19 root & application initialization
+├── portfolio.css              # Typography, CRT scanlines, and WebGL screen styling
 ├── Dockerfile                 # Multi-stage production container build
 ├── docker-compose.yml         # Container orchestration configuration
 ├── nginx.conf                 # Nginx server config with GLB/WASM mime types
