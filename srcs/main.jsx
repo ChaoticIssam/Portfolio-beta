@@ -3,10 +3,14 @@ import { Portfolio } from './portfolio';
 import { BIOSLoading } from './loader';
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
+import { inject } from '@vercel/analytics';
 import { Analytics } from '@vercel/analytics/react';
 import PortfolioDisplay from './comps/display';
 import MobileLanding from './comps/mobileLanding';
 import { soundManager } from './audioManager';
+
+// Initialize Vercel Web Analytics immediately on page load
+inject();
 
 // Detect mobile once, outside React (avoids stale closures)
 const IS_MOBILE = typeof window !== 'undefined' && (
