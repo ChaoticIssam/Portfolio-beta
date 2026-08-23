@@ -232,14 +232,20 @@ const PortfolioDisplay = () => {
                                     <div className="text-[11px] font-mono text-neutral-400">
                                         {project.tech.join('  ·  ')}
                                     </div>
-                                    <a
-                                        href={project.link}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-xs font-sans font-bold text-cyan-400 hover:text-cyan-300 transition-colors shrink-0 ml-3"
-                                    >
-                                        {project.actionText} &rarr;
-                                    </a>
+                                    {project.link ? (
+                                        <a
+                                            href={project.link}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-xs font-sans font-bold text-cyan-400 hover:text-cyan-300 transition-colors shrink-0 ml-3"
+                                        >
+                                            {project.actionText} &rarr;
+                                        </a>
+                                    ) : (
+                                        <span className="text-[11px] font-mono text-neutral-500 italic shrink-0 ml-3">
+                                            {project.actionText}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         ))}

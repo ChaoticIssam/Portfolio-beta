@@ -19,9 +19,9 @@ export const projectsList = [
         category: 'Full Stack & Desktop',
         description: 'Desktop-first digital activity tracking and productivity insights platform. FastAPI backend (SQLAlchemy, JWT) synced to an Electron background collector and Next.js web dashboard.',
         tech: ['FastAPI', 'Next.js', 'Electron', 'PostgreSQL', 'Docker', 'JWT'],
-        link: 'https://github.com/ChaoticIssam',
+        link: 'https://lnkd.in/p/ekTSj39N',
         tagType: 'project',
-        actionText: 'View Repository'
+        actionText: 'View Project'
     },
     {
         id: 'aittc-um6p',
@@ -29,9 +29,9 @@ export const projectsList = [
         category: 'AITTC, UM6P • Benguerir',
         description: 'Building a web platform to digitize farm operations and experimental data. Delivered 3 role-based workflows with containerized Docker Compose, Nginx, Django REST, and PostgreSQL.',
         tech: ['Django REST', 'React', 'Docker Compose', 'Nginx', 'PostgreSQL'],
-        link: 'https://linkedin.com/in/issam-zitouni/',
+        link: 'https://lnkd.in/p/ea2vsuJC',
         tagType: 'pro',
-        actionText: 'View Experience'
+        actionText: 'View Internship'
     },
     {
         id: 'key-system',
@@ -39,9 +39,10 @@ export const projectsList = [
         category: 'Key System • Casablanca',
         description: 'Designed and developed a corporate web platform for a hardware business to improve visibility and structure product/service content for seamless customer navigation.',
         tech: ['React', 'TypeScript', 'Tailwind CSS', 'Responsive UI', 'Nginx'],
-        link: 'https://linkedin.com/in/issam-zitouni/',
+        link: null,
+        confidential: true,
         tagType: 'pro',
-        actionText: 'View Experience'
+        actionText: 'Confidential · Copyrights'
     }
 ];
 

@@ -46,21 +46,18 @@ export const MobileLanding = ({ onLaunch3D }) => {
 
                 {/* Body Content */}
                 <div className="p-5 sm:p-6 space-y-6">
-                    {/* Notice Banner */}
+                    {/* Notice Banner without emojis */}
                     <div className="p-4 rounded-xl bg-gradient-to-br from-cyan-950/40 to-neutral-900 border border-cyan-800/50 relative overflow-hidden">
-                        <div className="flex items-start gap-3">
-                            <span className="text-2xl pt-0.5">🖥️</span>
-                            <div className="space-y-1">
-                                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-cyan-400 block">
-                                    OPTIMIZED MOBILE EXPERIENCE
-                                </span>
-                                <h2 className="text-sm font-bold text-white leading-snug">
-                                    For the interactive 3D studio experience, please visit on your computer!
-                                </h2>
-                                <p className="text-xs text-neutral-400 leading-relaxed font-sans pt-1">
-                                    The full 3D interactive CRT monitor, spatial lighting, and desk widgets run best on desktop browsers.
-                                </p>
-                            </div>
+                        <div className="space-y-1">
+                            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-cyan-400 block">
+                                OPTIMIZED MOBILE VIEW
+                            </span>
+                            <h2 className="text-sm font-bold text-white leading-snug">
+                                For the full interactive 3D studio experience, please visit on your computer!
+                            </h2>
+                            <p className="text-xs text-neutral-400 leading-relaxed font-sans pt-1">
+                                The full 3D interactive CRT monitor, spatial lighting, and desk widgets run best on desktop browsers.
+                            </p>
                         </div>
                     </div>
 
@@ -73,7 +70,7 @@ export const MobileLanding = ({ onLaunch3D }) => {
                             ISSAM ZITOUNI
                         </h1>
                         <p className="text-xs text-neutral-400 font-mono flex items-center gap-2">
-                            <span>📍 Benguerir & Casablanca, MA</span>
+                            <span>Benguerir & Casablanca, MA</span>
                             <span>•</span>
                             <span className="text-emerald-400">Open to opportunities</span>
                         </p>
@@ -85,10 +82,9 @@ export const MobileLanding = ({ onLaunch3D }) => {
                             href="/Issam_Zitouni_Resume.pdf"
                             download="Issam_Zitouni_Resume.pdf"
                             onClick={() => soundManager?.playClick?.()}
-                            className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 font-mono text-xs font-bold tracking-wide transition-all shadow-lg active:scale-95"
+                            className="flex items-center justify-center py-3 px-4 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 font-mono text-xs font-bold tracking-wide transition-all shadow-lg active:scale-95 text-center"
                         >
-                            <span>📄</span>
-                            <span>Download CV</span>
+                            <span>Download Resume</span>
                         </a>
 
                         <button
@@ -96,9 +92,8 @@ export const MobileLanding = ({ onLaunch3D }) => {
                                 soundManager?.playClick?.();
                                 setActiveTab(activeTab === 'message' ? 'overview' : 'message');
                             }}
-                            className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-white font-mono text-xs font-bold tracking-wide transition-all shadow-lg active:scale-95"
+                            className="flex items-center justify-center py-3 px-4 rounded-xl bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-white font-mono text-xs font-bold tracking-wide transition-all shadow-lg active:scale-95 text-center"
                         >
-                            <span>✉️</span>
                             <span>{activeTab === 'message' ? 'Close Form' : 'Message Me'}</span>
                         </button>
                     </div>
@@ -135,7 +130,7 @@ export const MobileLanding = ({ onLaunch3D }) => {
                                 type="submit"
                                 className="w-full py-2.5 bg-cyan-500 hover:bg-cyan-400 text-neutral-950 font-mono font-bold text-xs rounded-lg transition-colors shadow-md"
                             >
-                                {formSent ? '✓ Opening Email Client...' : '→ Send Message via Mail'}
+                                {formSent ? 'Opening Email Client...' : 'Send Message via Mail'}
                             </button>
                         </form>
                     )}
@@ -198,34 +193,49 @@ export const MobileLanding = ({ onLaunch3D }) => {
                                     <span className="truncate">issamzitouni257@gmail.com</span>
                                 </div>
                                 <span className="text-[11px] text-cyan-400 font-semibold whitespace-nowrap">
-                                    {copiedEmail ? '✓ Copied' : 'Copy'}
+                                    {copiedEmail ? 'Copied' : 'Copy'}
                                 </span>
                             </button>
                         </div>
                     </div>
 
-                    {/* Quick Projects / Skills Preview */}
+                    {/* Projects Preview with updated links */}
                     <div className="space-y-3 pt-2 border-t border-neutral-800/80">
                         <span className="text-[10px] font-mono font-bold text-neutral-400 uppercase tracking-widest block">
                             KEY HIGHLIGHTS & ARCHITECTURES
                         </span>
-                        <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
-                            <div className="p-2.5 rounded-lg bg-[#161b22] border border-neutral-800">
-                                <span className="text-cyan-400 font-bold block">3D WebGL Studio</span>
-                                <span className="text-neutral-400 text-[10px]">Three.js • React 19 • CRT</span>
-                            </div>
-                            <div className="p-2.5 rounded-lg bg-[#161b22] border border-neutral-800">
-                                <span className="text-cyan-400 font-bold block">Vita Platform</span>
-                                <span className="text-neutral-400 text-[10px]">FastAPI • Electron • Next.js</span>
-                            </div>
-                            <div className="p-2.5 rounded-lg bg-[#161b22] border border-neutral-800">
-                                <span className="text-cyan-400 font-bold block">AITTC Farm Digitization</span>
-                                <span className="text-neutral-400 text-[10px]">Django REST • Docker • PG</span>
-                            </div>
-                            <div className="p-2.5 rounded-lg bg-[#161b22] border border-neutral-800">
-                                <span className="text-cyan-400 font-bold block">Key System Platform</span>
-                                <span className="text-neutral-400 text-[10px]">React • TypeScript • Nginx</span>
-                            </div>
+                        <div className="grid grid-cols-1 gap-2.5 text-xs font-mono">
+                            {projectsList.map((project) => (
+                                <div key={project.id} className="p-3 rounded-xl bg-[#161b22] border border-neutral-800 flex flex-col justify-between space-y-2">
+                                    <div>
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider">{project.category}</span>
+                                            {project.tagType === 'pro' && (
+                                                <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">PRO EXPERIENCE</span>
+                                            )}
+                                        </div>
+                                        <h3 className="font-bold text-white text-sm font-sans">{project.title}</h3>
+                                        <p className="text-[11px] text-neutral-300 font-sans leading-relaxed pt-1">{project.description}</p>
+                                    </div>
+                                    <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-between text-[11px]">
+                                        <span className="text-neutral-400">{project.tech.slice(0, 3).join(' · ')}</span>
+                                        {project.link ? (
+                                            <a
+                                                href={project.link}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-cyan-400 hover:text-cyan-300 font-bold"
+                                            >
+                                                {project.actionText} &rarr;
+                                            </a>
+                                        ) : (
+                                            <span className="text-neutral-500 italic text-[10px]">
+                                                {project.actionText}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
 
@@ -248,7 +258,7 @@ export const MobileLanding = ({ onLaunch3D }) => {
 
             {/* Footer Telemetry */}
             <div className="text-center text-[10px] font-mono text-neutral-600 py-4 relative z-10">
-                <span>© {new Date().getFullYear()} ISSAM ZITOUNI • ALL RIGHTS RESERVED</span>
+                <span>(C) {new Date().getFullYear()} ISSAM ZITOUNI - ALL RIGHTS RESERVED</span>
             </div>
         </div>
     );
