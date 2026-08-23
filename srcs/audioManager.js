@@ -11,7 +11,6 @@ class SoundEngine {
         this.ambientOsc2 = null;
         this.ambientFilter = null;
         this.isAmbientPlaying = false;
-        this.pendingIntro = false;
     }
 
     init() {
@@ -30,89 +29,8 @@ class SoundEngine {
         if (!this.ctx) this.init();
         if (this.ctx && this.ctx.state === 'suspended') {
             this.ctx.resume().then(() => {
-                if (this.pendingIntro) {
-                    this.pendingIntro = false;
-                    this.playIntroSound();
-                    this.startAmbient();
-                }
+                this.startAmbient();
             }).catch(() => {});
-        }
-    }
-
-    // Plays the entrance sound when the 3D workspace loads — CRT power-on + chord sequence
-    playIntroSound() {
-        if (this.isMuted) return;
-        this.resumeContext();
-        if (!this.ctx || this.ctx.state === 'suspended') {
-            this.pendingIntro = true;
-            return;
-        }
-
-        try {
-            const now = this.ctx.currentTime;
-
-            // 1. Sub-bass power surge (simulating power grid & capacitor charge)
-            const subOsc = this.ctx.createOscillator();
-            const subGain = this.ctx.createGain();
-            subOsc.type = 'sine';
-            subOsc.frequency.setValueAtTime(45, now);
-            subOsc.frequency.exponentialRampToValueAtTime(95, now + 0.6);
-            subOsc.frequency.exponentialRampToValueAtTime(55, now + 1.8);
-
-            subGain.gain.setValueAtTime(0.01, now);
-            subGain.gain.linearRampToValueAtTime(0.25, now + 0.3);
-            subGain.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
-
-            subOsc.connect(subGain);
-            subGain.connect(this.ctx.destination);
-            subOsc.start(now);
-            subOsc.stop(now + 2.1);
-
-            // 2. High-voltage CRT degauss sparkle / sweep
-            const sparkOsc = this.ctx.createOscillator();
-            const sparkGain = this.ctx.createGain();
-            const sparkFilter = this.ctx.createBiquadFilter();
-
-            sparkOsc.type = 'sawtooth';
-            sparkOsc.frequency.setValueAtTime(1200, now);
-            sparkOsc.frequency.exponentialRampToValueAtTime(2800, now + 0.25);
-            sparkOsc.frequency.exponentialRampToValueAtTime(400, now + 0.9);
-
-            sparkFilter.type = 'bandpass';
-            sparkFilter.frequency.setValueAtTime(2200, now);
-            sparkFilter.Q.setValueAtTime(4.0, now);
-
-            sparkGain.gain.setValueAtTime(0.01, now);
-            sparkGain.gain.linearRampToValueAtTime(0.12, now + 0.15);
-            sparkGain.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
-
-            sparkOsc.connect(sparkFilter);
-            sparkFilter.connect(sparkGain);
-            sparkGain.connect(this.ctx.destination);
-            sparkOsc.start(now);
-            sparkOsc.stop(now + 0.95);
-
-            // 3. Ascending harmonic cyber chord (C3 - G3 - C4 - E4 - G4 - C5)
-            const chord = [130.81, 196.00, 261.63, 329.63, 392.00, 523.25];
-            chord.forEach((freq, idx) => {
-                const noteTime = now + 0.2 + idx * 0.11;
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-
-                osc.type = idx % 2 === 0 ? 'sine' : 'triangle';
-                osc.frequency.setValueAtTime(freq, noteTime);
-
-                gain.gain.setValueAtTime(0.01, noteTime);
-                gain.gain.linearRampToValueAtTime(0.14, noteTime + 0.08);
-                gain.gain.exponentialRampToValueAtTime(0.001, noteTime + 1.4);
-
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start(noteTime);
-                osc.stop(noteTime + 1.5);
-            });
-        } catch (e) {
-            // Audio play skipped
         }
     }
 
@@ -187,7 +105,7 @@ class SoundEngine {
         }
     }
 
-    // Short mechanical click — plays on button presses
+    // Authentic physical mechanical mouse click sound (microswitch snap + body resonance)
     playClick() {
         if (this.isMuted) return;
         this.resumeContext();
@@ -195,26 +113,68 @@ class SoundEngine {
 
         try {
             const now = this.ctx.currentTime;
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            const filter = this.ctx.createBiquadFilter();
 
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(900, now);
-            osc.frequency.exponentialRampToValueAtTime(140, now + 0.045);
+            // 1. High-frequency microswitch click snap (transient trigger)
+            const snapOsc = this.ctx.createOscillator();
+            const snapGain = this.ctx.createGain();
+            const snapFilter = this.ctx.createBiquadFilter();
 
-            filter.type = 'lowpass';
-            filter.frequency.setValueAtTime(2400, now);
+            snapOsc.type = 'triangle';
+            snapOsc.frequency.setValueAtTime(2400, now);
+            snapOsc.frequency.exponentialRampToValueAtTime(700, now + 0.007);
 
-            gain.gain.setValueAtTime(0.2, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+            snapFilter.type = 'highpass';
+            snapFilter.frequency.setValueAtTime(1200, now);
 
-            osc.connect(filter);
-            filter.connect(gain);
-            gain.connect(this.ctx.destination);
+            snapGain.gain.setValueAtTime(0.18, now);
+            snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.007);
 
-            osc.start(now);
-            osc.stop(now + 0.05);
+            snapOsc.connect(snapFilter);
+            snapFilter.connect(snapGain);
+            snapGain.connect(this.ctx.destination);
+
+            snapOsc.start(now);
+            snapOsc.stop(now + 0.009);
+
+            // 2. Tactile switch contact resonance
+            const tickOsc = this.ctx.createOscillator();
+            const tickGain = this.ctx.createGain();
+            const tickFilter = this.ctx.createBiquadFilter();
+
+            tickOsc.type = 'square';
+            tickOsc.frequency.setValueAtTime(3200, now);
+            tickOsc.frequency.exponentialRampToValueAtTime(1000, now + 0.012);
+
+            tickFilter.type = 'bandpass';
+            tickFilter.frequency.setValueAtTime(2600, now);
+            tickFilter.Q.setValueAtTime(3.2, now);
+
+            tickGain.gain.setValueAtTime(0.09, now);
+            tickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.012);
+
+            tickOsc.connect(tickFilter);
+            tickFilter.connect(tickGain);
+            tickGain.connect(this.ctx.destination);
+
+            tickOsc.start(now);
+            tickOsc.stop(now + 0.015);
+
+            // 3. Mouse housing plastic body impulse
+            const bodyOsc = this.ctx.createOscillator();
+            const bodyGain = this.ctx.createGain();
+
+            bodyOsc.type = 'sine';
+            bodyOsc.frequency.setValueAtTime(260, now);
+            bodyOsc.frequency.exponentialRampToValueAtTime(90, now + 0.015);
+
+            bodyGain.gain.setValueAtTime(0.14, now);
+            bodyGain.gain.exponentialRampToValueAtTime(0.001, now + 0.015);
+
+            bodyOsc.connect(bodyGain);
+            bodyGain.connect(this.ctx.destination);
+
+            bodyOsc.start(now);
+            bodyOsc.stop(now + 0.018);
         } catch (_) {}
     }
 
@@ -318,36 +278,10 @@ class SoundEngine {
         } catch (_) {}
     }
 
-    // Speaks a welcome greeting using the browser's speech synthesis API
-    speakWelcome() {
-        if (this.isMuted || !('speechSynthesis' in window)) return;
-        try {
-            window.speechSynthesis.cancel();
-            const text = "System initialized. Welcome to Issam Zitouni's interactive workspace.";
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = 1.05;
-            utterance.pitch = 0.9;
-            utterance.volume = 0.85;
-
-            const voices = window.speechSynthesis.getVoices();
-            const englishVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Daniel') || v.name.includes('Natural')));
-            if (englishVoice) {
-                utterance.voice = englishVoice;
-            }
-
-            window.speechSynthesis.speak(utterance);
-        } catch (e) {
-            // Speech synthesis skipped
-        }
-    }
-
     toggleMute() {
         this.isMuted = !this.isMuted;
         if (this.isMuted) {
             this.stopAmbient();
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-            }
         } else {
             this.startAmbient();
         }

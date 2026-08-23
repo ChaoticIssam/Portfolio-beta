@@ -43,16 +43,11 @@ function boot3DExperience() {
     const biosLoading = new BIOSLoading();
     biosLoading.start().then(() => {
         soundManager.resumeContext();
-        soundManager.playIntroSound();
         soundManager.startAmbient();
 
         if (portfolio && portfolio.startCinematicEntrance) {
             portfolio.startCinematicEntrance();
         }
-
-        setTimeout(() => {
-            soundManager.speakWelcome();
-        }, 2800);
     });
 
     // Safety fallback: force-hide BIOS after 40s if stuck
@@ -61,7 +56,6 @@ function boot3DExperience() {
         if (bs && bs.style.display !== 'none') {
             bs.style.display = 'none';
             soundManager.resumeContext();
-            soundManager.playIntroSound();
             soundManager.startAmbient();
             if (portfolio && portfolio.startCinematicEntrance) {
                 portfolio.startCinematicEntrance();
