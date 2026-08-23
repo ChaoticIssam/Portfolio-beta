@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /node_modules/
+Disallow: /src/
+Disallow: /dist/
+
+Sitemap: https://issamzitouni.dev/sitemap.xml
