@@ -3,6 +3,7 @@ import { Portfolio } from './portfolio';
 import { BIOSLoading } from './loader';
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
+import { Analytics } from '@vercel/analytics/react';
 import PortfolioDisplay from './comps/display';
 import MobileLanding from './comps/mobileLanding';
 import { soundManager } from './audioManager';
@@ -89,11 +90,16 @@ function App() {
         }
     }, [showMobile]);
 
-    if (showMobile) {
-        return <MobileLanding onLaunch3D={() => setForce3D(true)} />;
-    }
-
-    return <PortfolioDisplay />;
+    return (
+        <>
+            {showMobile ? (
+                <MobileLanding onLaunch3D={() => setForce3D(true)} />
+            ) : (
+                <PortfolioDisplay />
+            )}
+            <Analytics />
+        </>
+    );
 }
 
 // ─── Mount ────────────────────────────────────────────────────────────────────
