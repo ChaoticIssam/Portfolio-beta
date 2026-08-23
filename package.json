@@ -10,7 +10,7 @@
     "audit-fix": "npm audit fix"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": "20.x"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.0.6",
