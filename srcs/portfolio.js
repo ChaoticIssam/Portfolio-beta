@@ -45,6 +45,7 @@ export class Portfolio {
 
 		// Runtime flags and texture update queue
 		this.isDestroyed = false;
+		this.isEntranceComplete = false;
 		this.isUpdatingTexture = false;
 		this.textureUpdateTimeout = null;
 		this.currentSection = 'home';
@@ -88,11 +89,14 @@ export class Portfolio {
 			this.ambientLight = lights.ambientLight;
 			this.bulbLight = lights.bulbLight;
 
-			// Create the desk lamp toggle button
+			// Create the desk lamp toggle button (hidden until entrance animation completes)
 			this.lightSwitchWidget = createLightSwitch({
 				scene: this.scene,
 				raycaster: this.raycaster
 			});
+			if (this.lightSwitchWidget?.mesh) {
+				this.lightSwitchWidget.mesh.visible = false;
+			}
 
 			// Orbit controls — no zoom or pan, just rotation with damping
 			this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -136,27 +140,20 @@ export class Portfolio {
 									this.screenMesh = child;
 									this.screenMesh.visible = true;
 
+									// Initialize with pure black unlit screen until entrance animation completes
+									this.screenMaterial = new THREE.MeshBasicMaterial({
+										color: 0x000000,
+										side: THREE.DoubleSide
+									});
+									this.screenMesh.material = this.screenMaterial;
+
 									const box = new THREE.Box3().setFromObject(child);
 									const center = box.getCenter(new THREE.Vector3());
 									this.controls.target.copy(center);
 									this.camera.lookAt(center);
 
-									// Retry rendering the React content onto the CRT texture until the DOM is ready
-									const tryRender = (delay, attempts = 0) => {
-										setTimeout(() => {
-											this.portfolioContent = document.getElementById('portfolioContent');
-											if (this.portfolioContent) {
-												this.updateScreenDisplay({ recreateMaterial: true });
-												setTimeout(() => this.updateScreenDisplay({ recreateMaterial: false }), 500);
-											} else if (attempts < 10) {
-												tryRender(200, attempts + 1);
-											}
-										}, delay);
-									};
-									tryRender(800);
-
-									// Spotlight for the CRT screen glow
-									const screenLight = new THREE.SpotLight(0xffffff, 3, 50, Math.PI / 4, 0.5, 1);
+									// Spotlight for the CRT screen glow (starts at intensity 0)
+									const screenLight = new THREE.SpotLight(0xffffff, 0, 50, Math.PI / 4, 0.5, 1);
 									screenLight.position.set(
 										this.screenMesh.position.x,
 										this.screenMesh.position.y + 10,
@@ -179,11 +176,14 @@ export class Portfolio {
 						gltf.scene.scale.set(10, 10, 10);
 						this.scene.add(gltf.scene);
 
-						// Attach the clock and sound widgets onto the base box in the scene
+						// Attach clock and sound switches (hidden until entrance animation completes)
 						this.clockWidget = createDigitalClock({
 							boxMesh: this.boxMesh,
 							scene: this.scene
 						});
+						if (this.clockWidget?.mesh) {
+							this.clockWidget.mesh.visible = false;
+						}
 
 						this.soundSwitchWidget = createSoundSwitch({
 							boxMesh: this.boxMesh,
@@ -191,6 +191,9 @@ export class Portfolio {
 							raycaster: this.raycaster,
 							soundManager: soundManager
 						});
+						if (this.soundSwitchWidget?.mesh) {
+							this.soundSwitchWidget.mesh.visible = false;
+						}
 
 						this.setupEntranceAnimation();
 						this.animate();
@@ -510,7 +513,7 @@ export class Portfolio {
 	}
 
 	handleClick(event) {
-		if (this.isDestroyed || !this.screenMesh) return;
+		if (this.isDestroyed || !this.isEntranceComplete || !this.screenMesh) return;
 
 		const rect = this.renderer.domElement.getBoundingClientRect();
 		this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -555,7 +558,7 @@ export class Portfolio {
 	}
 
 	handleHover(event) {
-		if (this.isDestroyed || !this.camera) return;
+		if (this.isDestroyed || !this.isEntranceComplete || !this.camera) return;
 
 		const rect = this.renderer.domElement.getBoundingClientRect();
 		this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -606,6 +609,8 @@ export class Portfolio {
 	startCinematicEntrance() {
 		if (!this.camera || !this.controls) return;
 
+		this.isEntranceComplete = false;
+
 		this.camera.position.set(210, 110, 180);
 		const targetPosition = new THREE.Vector3(5, 0, 5);
 		this.camera.lookAt(targetPosition);
@@ -634,39 +639,56 @@ export class Portfolio {
 			}, 3200)
 			.start();
 
-		// Brief CRT ignition flash on screen power-on
-		if (this.screenMaterial) {
-			this.screenMaterial.color.setHex(0x000000);
-			setTimeout(() => {
-				if (this.screenMaterial) {
-					this.screenMaterial.color.setHex(0x67e8f9);
-					if (this.screenLight) this.screenLight.intensity = 4.0;
-					setTimeout(() => {
-						if (this.screenMaterial) {
-							new JEASINGS.JEasing(this.screenMaterial.color)
-								.to({ r: 1, g: 1, b: 1 }, 700)
-								.start();
-						}
-						if (this.screenLight) this.screenLight.intensity = 1.5;
-					}, 200);
-				}
-			}, 500);
-		}
+		// Screen, clock, buttons, and lamp reveal ONLY after entrance animation lands at the desk (~2400ms)
+		setTimeout(() => {
+			if (this.isDestroyed) return;
 
-		// Desk lamp flicker on startup — simulates a warming filament
-		if (this.bulbLight && this.isLightOn) {
-			this.bulbLight.intensity = 0;
-			setTimeout(() => { if (this.bulbLight) this.bulbLight.intensity = 140; }, 350);
-			setTimeout(() => { if (this.bulbLight) this.bulbLight.intensity = 30;  }, 500);
-			setTimeout(() => { if (this.bulbLight) this.bulbLight.intensity = 240; }, 650);
-			setTimeout(() => {
-				if (this.bulbLight) {
-					new JEASINGS.JEasing(this.bulbLight)
-						.to({ intensity: 200 }, 800)
-						.start();
-				}
-			}, 800);
-		}
+			// 1. Reveal desk widgets (clock, sound switch, lamp button)
+			if (this.clockWidget?.mesh) this.clockWidget.mesh.visible = true;
+			if (this.soundSwitchWidget?.mesh) this.soundSwitchWidget.mesh.visible = true;
+			if (this.lightSwitchWidget?.mesh) this.lightSwitchWidget.mesh.visible = true;
+
+			// 2. Power on CRT screen with cinematic ignition flash
+			this.updateScreenDisplay({ recreateMaterial: true });
+			if (this.screenMaterial) {
+				this.screenMaterial.color.setHex(0x67e8f9);
+				if (this.screenLight) this.screenLight.intensity = 4.0;
+				setTimeout(() => {
+					if (this.screenMaterial) {
+						new JEASINGS.JEasing(this.screenMaterial.color)
+							.to({ r: 1, g: 1, b: 1 }, 700)
+							.start();
+					}
+					if (this.screenLight) {
+						new JEASINGS.JEasing(this.screenLight)
+							.to({ intensity: 1.5 }, 700)
+							.start();
+					}
+				}, 220);
+			}
+
+			// 3. Desk lamp warm-up flicker
+			if (this.bulbLight && this.isLightOn) {
+				this.bulbLight.intensity = 0;
+				setTimeout(() => { if (this.bulbLight) this.bulbLight.intensity = 140; }, 150);
+				setTimeout(() => { if (this.bulbLight) this.bulbLight.intensity = 30;  }, 280);
+				setTimeout(() => { if (this.bulbLight) this.bulbLight.intensity = 240; }, 420);
+				setTimeout(() => {
+					if (this.bulbLight) {
+						new JEASINGS.JEasing(this.bulbLight)
+							.to({ intensity: 200 }, 600)
+							.start();
+					}
+				}, 560);
+			}
+		}, 2400);
+
+		// Complete entrance sequence and unlock full interactions
+		setTimeout(() => {
+			if (this.isDestroyed) return;
+			this.isEntranceComplete = true;
+			this.updateScreenOverlayPosition();
+		}, 3200);
 	}
 
 	animate() {

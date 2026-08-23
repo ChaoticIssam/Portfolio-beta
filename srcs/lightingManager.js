@@ -23,8 +23,8 @@ export function setupLighting({ scene }) {
 	whitesideLight.position.set(10, 20, 30);
 	scene.add(whitesideLight);
 
-	// Warm desk lamp glow — incandescent feel
-	const bulbLight = new THREE.PointLight(0xffee88, 200, 300, 1);
+	// Warm desk lamp glow — starts at intensity 0 and flickers on after entrance
+	const bulbLight = new THREE.PointLight(0xffee88, 0, 300, 1);
 	bulbLight.castShadow = true;
 	bulbLight.shadow.mapSize.width = 2048;
 	bulbLight.shadow.mapSize.height = 2048;

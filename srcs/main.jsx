@@ -47,7 +47,7 @@ function boot3DExperience() {
 
         setTimeout(() => {
             soundManager.speakWelcome();
-        }, 2000);
+        }, 2800);
     });
 
     // Safety fallback: force-hide BIOS after 40s if stuck
