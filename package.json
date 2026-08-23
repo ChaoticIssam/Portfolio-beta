@@ -9,6 +9,9 @@
     "preview": "vite preview",
     "audit-fix": "npm audit fix"
   },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "dependencies": {
     "@tailwindcss/postcss": "^4.0.6",
     "@tailwindcss/vite": "^4.0.6",
