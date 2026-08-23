@@ -219,50 +219,9 @@ class SoundEngine {
         } catch (_) {}
     }
 
-    // Whoosh + frequency sweep — plays when switching between portfolio sections
+    // Navigation click — plays crisp physical mouse click when navigating sections
     playSectionSwitch() {
-        if (this.isMuted) return;
-        this.resumeContext();
-        if (!this.ctx || this.ctx.state === 'suspended') return;
-
-        try {
-            const now = this.ctx.currentTime;
-
-            const osc1 = this.ctx.createOscillator();
-            const osc2 = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            const filter = this.ctx.createBiquadFilter();
-
-            osc1.type = 'sine';
-            osc1.frequency.setValueAtTime(320, now);
-            osc1.frequency.exponentialRampToValueAtTime(780, now + 0.12);
-            osc1.frequency.exponentialRampToValueAtTime(220, now + 0.28);
-
-            osc2.type = 'sawtooth';
-            osc2.frequency.setValueAtTime(160, now);
-            osc2.frequency.exponentialRampToValueAtTime(440, now + 0.14);
-            osc2.frequency.exponentialRampToValueAtTime(110, now + 0.28);
-
-            filter.type = 'bandpass';
-            filter.frequency.setValueAtTime(600, now);
-            filter.frequency.exponentialRampToValueAtTime(1600, now + 0.12);
-            filter.frequency.exponentialRampToValueAtTime(400, now + 0.28);
-            filter.Q.setValueAtTime(3.5, now);
-
-            gain.gain.setValueAtTime(0.01, now);
-            gain.gain.linearRampToValueAtTime(0.18, now + 0.06);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
-
-            osc1.connect(filter);
-            osc2.connect(filter);
-            filter.connect(gain);
-            gain.connect(this.ctx.destination);
-
-            osc1.start(now);
-            osc2.start(now);
-            osc1.stop(now + 0.3);
-            osc2.stop(now + 0.3);
-        } catch (_) {}
+        this.playClick();
     }
 
     // Quick high-pitched blip on hover
