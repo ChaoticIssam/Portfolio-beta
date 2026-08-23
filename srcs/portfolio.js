@@ -527,6 +527,7 @@ export class Portfolio {
 			if (hits.length > 0) {
 				this.isLightOn = !this.isLightOn;
 				this.lightSwitchWidget.updateSwitch(this.isLightOn);
+				soundManager.playLightSwitch(this.isLightOn);
 				if (this.bulbLight) {
 					new JEASINGS.JEasing(this.bulbLight)
 						.to({ intensity: this.isLightOn ? 200 : 0 }, 500)

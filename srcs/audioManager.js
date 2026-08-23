@@ -105,8 +105,48 @@ class SoundEngine {
         }
     }
 
-    // Authentic physical mechanical mouse click sound (microswitch snap + body resonance)
+    // Authentic computer mouse microswitch click (ultra-crisp physical click waveform)
     playClick() {
+        if (this.isMuted) return;
+        this.resumeContext();
+        if (!this.ctx || this.ctx.state === 'suspended') return;
+
+        try {
+            const sampleRate = this.ctx.sampleRate || 44100;
+            const length = Math.floor(sampleRate * 0.007); // 7ms physical click duration
+            const buffer = this.ctx.createBuffer(1, length, sampleRate);
+            const data = buffer.getChannelData(0);
+
+            for (let i = 0; i < length; i++) {
+                const t = i / sampleRate;
+                const decay = Math.exp(-t * 1400);
+                const clickWave = Math.sin(2 * Math.PI * 3800 * t) * 0.7 +
+                                  Math.sin(2 * Math.PI * 1600 * t) * 0.4 +
+                                  (Math.random() * 2 - 1) * 0.25;
+                data[i] = clickWave * decay;
+            }
+
+            const source = this.ctx.createBufferSource();
+            source.buffer = buffer;
+
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(3200, this.ctx.currentTime);
+            filter.Q.setValueAtTime(1.8, this.ctx.currentTime);
+
+            const gain = this.ctx.createGain();
+            gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+
+            source.connect(filter);
+            filter.connect(gain);
+            gain.connect(this.ctx.destination);
+
+            source.start(this.ctx.currentTime);
+        } catch (_) {}
+    }
+
+    // Heavy mechanical rocker / toggle switch sound for the desk lamp
+    playLightSwitch(isOn) {
         if (this.isMuted) return;
         this.resumeContext();
         if (!this.ctx || this.ctx.state === 'suspended') return;
@@ -114,67 +154,68 @@ class SoundEngine {
         try {
             const now = this.ctx.currentTime;
 
-            // 1. High-frequency microswitch click snap (transient trigger)
-            const snapOsc = this.ctx.createOscillator();
-            const snapGain = this.ctx.createGain();
-            const snapFilter = this.ctx.createBiquadFilter();
+            // 1. First mechanical latch "clack"
+            const osc1 = this.ctx.createOscillator();
+            const gain1 = this.ctx.createGain();
+            const filter1 = this.ctx.createBiquadFilter();
 
-            snapOsc.type = 'triangle';
-            snapOsc.frequency.setValueAtTime(2400, now);
-            snapOsc.frequency.exponentialRampToValueAtTime(700, now + 0.007);
+            osc1.type = 'square';
+            const baseFreq = isOn ? 720 : 850;
+            osc1.frequency.setValueAtTime(baseFreq, now);
+            osc1.frequency.exponentialRampToValueAtTime(180, now + 0.025);
 
-            snapFilter.type = 'highpass';
-            snapFilter.frequency.setValueAtTime(1200, now);
+            filter1.type = 'lowpass';
+            filter1.frequency.setValueAtTime(1800, now);
+            filter1.Q.setValueAtTime(3.0, now);
 
-            snapGain.gain.setValueAtTime(0.18, now);
-            snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.007);
+            gain1.gain.setValueAtTime(0.3, now);
+            gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
 
-            snapOsc.connect(snapFilter);
-            snapFilter.connect(snapGain);
-            snapGain.connect(this.ctx.destination);
+            osc1.connect(filter1);
+            filter1.connect(gain1);
+            gain1.connect(this.ctx.destination);
 
-            snapOsc.start(now);
-            snapOsc.stop(now + 0.009);
+            osc1.start(now);
+            osc1.stop(now + 0.03);
 
-            // 2. Tactile switch contact resonance
-            const tickOsc = this.ctx.createOscillator();
-            const tickGain = this.ctx.createGain();
-            const tickFilter = this.ctx.createBiquadFilter();
+            // 2. Secondary rocker bounce click (~8ms later)
+            const osc2 = this.ctx.createOscillator();
+            const gain2 = this.ctx.createGain();
+            const filter2 = this.ctx.createBiquadFilter();
 
-            tickOsc.type = 'square';
-            tickOsc.frequency.setValueAtTime(3200, now);
-            tickOsc.frequency.exponentialRampToValueAtTime(1000, now + 0.012);
+            osc2.type = 'triangle';
+            osc2.frequency.setValueAtTime(isOn ? 1100 : 1300, now + 0.008);
+            osc2.frequency.exponentialRampToValueAtTime(300, now + 0.032);
 
-            tickFilter.type = 'bandpass';
-            tickFilter.frequency.setValueAtTime(2600, now);
-            tickFilter.Q.setValueAtTime(3.2, now);
+            filter2.type = 'bandpass';
+            filter2.frequency.setValueAtTime(1400, now + 0.008);
 
-            tickGain.gain.setValueAtTime(0.09, now);
-            tickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.012);
+            gain2.gain.setValueAtTime(0.2, now + 0.008);
+            gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.032);
 
-            tickOsc.connect(tickFilter);
-            tickFilter.connect(tickGain);
-            tickGain.connect(this.ctx.destination);
+            osc2.connect(filter2);
+            filter2.connect(gain2);
+            gain2.connect(this.ctx.destination);
 
-            tickOsc.start(now);
-            tickOsc.stop(now + 0.015);
+            osc2.start(now + 0.008);
+            osc2.stop(now + 0.035);
 
-            // 3. Mouse housing plastic body impulse
+            // 3. Low-end enclosure thud (rocker housing)
             const bodyOsc = this.ctx.createOscillator();
             const bodyGain = this.ctx.createGain();
 
             bodyOsc.type = 'sine';
-            bodyOsc.frequency.setValueAtTime(260, now);
-            bodyOsc.frequency.exponentialRampToValueAtTime(90, now + 0.015);
+            bodyOsc.frequency.setValueAtTime(isOn ? 180 : 210, now);
+            bodyOsc.frequency.exponentialRampToValueAtTime(50, now + 0.035);
 
-            bodyGain.gain.setValueAtTime(0.14, now);
-            bodyGain.gain.exponentialRampToValueAtTime(0.001, now + 0.015);
+            bodyGain.gain.setValueAtTime(0.25, now);
+            bodyGain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
 
             bodyOsc.connect(bodyGain);
             bodyGain.connect(this.ctx.destination);
 
             bodyOsc.start(now);
-            bodyOsc.stop(now + 0.018);
+            bodyOsc.stop(now + 0.04);
         } catch (_) {}
     }
 
