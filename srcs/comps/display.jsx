@@ -318,12 +318,12 @@ const PortfolioDisplay = () => {
                             <div className="space-y-1">
                                 <span className="text-[10px] font-mono text-neutral-500 font-bold uppercase tracking-wider block">LINKEDIN</span>
                                 <a
-                                    href="https://linkedin.com/in/issam-zitouni/"
+                                    href="https://www.linkedin.com/in/issamzitouni/"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-sm font-mono font-bold text-cyan-400 hover:text-cyan-300 transition-colors block"
                                 >
-                                    linkedin.com/in/issam-zitouni &rarr;
+                                    linkedin.com/in/issamzitouni &rarr;
                                 </a>
                                 <p className="text-xs text-neutral-400">
                                     Career experience, recommendations, and direct messaging.

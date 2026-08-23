@@ -143,7 +143,7 @@ export const MobileLanding = ({ onLaunch3D }) => {
 
                         <div className="grid grid-cols-1 gap-2 font-mono text-xs">
                             <a
-                                href="https://linkedin.com/in/issam-zitouni/"
+                                href="https://www.linkedin.com/in/issamzitouni/"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onClick={() => soundManager?.playClick?.()}
@@ -151,7 +151,7 @@ export const MobileLanding = ({ onLaunch3D }) => {
                             >
                                 <div className="flex items-center gap-3">
                                     <span className="text-cyan-400 font-bold">in</span>
-                                    <span>linkedin.com/in/issam-zitouni</span>
+                                    <span>linkedin.com/in/issamzitouni</span>
                                 </div>
                                 <span className="text-neutral-500 text-sm">&rarr;</span>
                             </a>

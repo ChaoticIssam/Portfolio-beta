@@ -1,12 +1,8 @@
 import * as THREE from 'three';
 import html2canvas from 'html2canvas';
 
-/**
- * Screen Manager handles rendering the React DOM into the 3D CRT monitor texture
- * and routing raycast / 2D overlay clicks into the synthetic DOM events.
- */
-
-// Canvas-based color resolver (resolves oklch/color-mix/oklab to rgba via browser's 2D canvas engine)
+// Resolves modern CSS colors (oklch, color-mix, oklab) to standard rgba
+// by drawing them into a 1x1 canvas and reading back the pixel value.
 export function resolveColor(colorStr) {
 	if (!colorStr) return colorStr;
 	try {
@@ -25,7 +21,8 @@ export function resolveColor(colorStr) {
 	}
 }
 
-// Balanced-parentheses text patcher: replaces all modern color fns in any CSS text
+// Walks through CSS text and replaces any oklch/oklab/color-mix calls
+// with their resolved rgba equivalents — needed for html2canvas compatibility.
 export function patchCssText(cssText) {
 	if (!cssText || typeof cssText !== 'string' || !/oklch|oklab|color-mix|light-dark/i.test(cssText)) return cssText;
 	const targets = ['oklch(', 'oklab(', 'color-mix(', 'light-dark('];
@@ -55,9 +52,8 @@ export function patchCssText(cssText) {
 	return result;
 }
 
-/**
- * Captures the HTML portfolioContent element into a Three.js CanvasTexture
- */
+// Captures the React portfolioContent div into a Three.js CanvasTexture
+// to render it onto the 3D CRT monitor surface.
 export async function captureScreenTexture(portfolioContent, isMobile = false) {
 	if (!portfolioContent) return null;
 
@@ -78,7 +74,7 @@ export async function captureScreenTexture(portfolioContent, isMobile = false) {
 				element.classList.contains('skip-capture');
 		},
 		onclone: (clonedDoc) => {
-			// 1. Replace local <link stylesheet> in the clone with patched <style> tag
+			// Replace external stylesheet links in the clone with patched <style> tags
 			Array.from(clonedDoc.querySelectorAll('link[rel="stylesheet"]')).forEach(link => {
 				if (link.href && (link.href.includes('fonts.googleapis.com') || link.href.includes('fonts.gstatic.com'))) {
 					return;
@@ -97,12 +93,12 @@ export async function captureScreenTexture(portfolioContent, isMobile = false) {
 				} catch (e) {}
 			});
 
-			// 2. Patch any inline <style> tags
+			// Patch inline <style> tags too
 			Array.from(clonedDoc.querySelectorAll('style')).forEach(s => {
 				s.textContent = patchCssText(s.textContent || '');
 			});
 
-			// 3. Intercept getComputedStyle in cloned doc
+			// Intercept getComputedStyle calls so any returned color strings get patched on the fly
 			if (clonedDoc.defaultView && clonedDoc.defaultView.getComputedStyle) {
 				const origGetComputedStyle = clonedDoc.defaultView.getComputedStyle.bind(clonedDoc.defaultView);
 				clonedDoc.defaultView.getComputedStyle = function(el, pseudo) {
@@ -132,7 +128,7 @@ export async function captureScreenTexture(portfolioContent, isMobile = false) {
 				};
 			}
 
-			// 4. CRUCIAL: Position the cloned portfolioContent at (0, 0) so html2canvas renders it accurately
+			// Reset the cloned element position to (0,0) — it's normally off-screen at left: -9999px
 			const clonedContent = clonedDoc.getElementById('portfolioContent');
 			if (clonedContent) {
 				clonedContent.style.position = 'absolute';
@@ -142,7 +138,7 @@ export async function captureScreenTexture(portfolioContent, isMobile = false) {
 				clonedContent.style.visibility = 'visible';
 				clonedContent.style.opacity = '1';
 
-				// 5. Patch computed color properties per element directly on cloned DOM nodes
+				// Patch computed color values directly on each cloned DOM node
 				const origEls = Array.from(portfolioContent.querySelectorAll('*'));
 				const cloneEls = Array.from(clonedContent.querySelectorAll('*'));
 				const colorProps = [
@@ -175,7 +171,7 @@ export async function captureScreenTexture(portfolioContent, isMobile = false) {
 	const rawCanvas = await html2canvas(portfolioContent, html2canvasOptions);
 	if (!rawCanvas) return null;
 
-	// Boost brightness slightly for CRT punch
+	// Slightly boost brightness for that CRT punch feel
 	const rawCtx = rawCanvas.getContext('2d');
 	const imageData = rawCtx.getImageData(0, 0, rawCanvas.width, rawCanvas.height);
 	const data = imageData.data;

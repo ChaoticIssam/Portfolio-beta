@@ -1,8 +1,5 @@
-/**
- * Web Audio API Sound & Voice Synthesizer Engine
- * High-performance, zero-latency, zero-dependency audio engine for 3D Portfolio.
- * Gracefully respects browser autoplay policies and unlocks on first gesture.
- */
+// Web Audio sound engine — all sounds are synthesized on the fly using the Web Audio API.
+// No audio files needed. Respects browser autoplay rules by waiting for the first user gesture.
 
 class SoundEngine {
     constructor() {
@@ -42,10 +39,7 @@ class SoundEngine {
         }
     }
 
-    /**
-     * Epic retro-futuristic 3D environment entrance intro sound
-     * CRT power-on ignition, ascending cyber harmonic chord, and sub-bass resonance.
-     */
+    // Plays the entrance sound when the 3D workspace loads — CRT power-on + chord sequence
     playIntroSound() {
         if (this.isMuted) return;
         this.resumeContext();
@@ -122,9 +116,7 @@ class SoundEngine {
         }
     }
 
-    /**
-     * Start background ambient futuristic drone / terminal room tone
-     */
+    // Starts a subtle looping ambient drone — gives the room a live, breathing feel
     startAmbient() {
         if (this.isMuted || this.isAmbientPlaying) return;
         this.resumeContext();
@@ -195,9 +187,7 @@ class SoundEngine {
         }
     }
 
-    /**
-     * Tactile sci-fi mechanical click sound
-     */
+    // Short mechanical click — plays on button presses
     playClick() {
         if (this.isMuted) return;
         this.resumeContext();
@@ -228,9 +218,7 @@ class SoundEngine {
         } catch (_) {}
     }
 
-    /**
-     * Cybernetic section transition whoosh & CRT frequency sweep
-     */
+    // Whoosh + frequency sweep — plays when switching between portfolio sections
     playSectionSwitch() {
         if (this.isMuted) return;
         this.resumeContext();
@@ -276,9 +264,7 @@ class SoundEngine {
         } catch (_) {}
     }
 
-    /**
-     * Gentle button hover frequency blip
-     */
+    // Quick high-pitched blip on hover
     playHover() {
         if (this.isMuted) return;
         this.resumeContext();
@@ -304,9 +290,7 @@ class SoundEngine {
         } catch (_) {}
     }
 
-    /**
-     * Action success chime (e.g. email copied)
-     */
+    // Three-note ascending chime — plays on successful actions like copying the email
     playSuccess() {
         if (this.isMuted) return;
         this.resumeContext();
@@ -334,9 +318,7 @@ class SoundEngine {
         } catch (_) {}
     }
 
-    /**
-     * Synthesizes futuristic robotic voice greeting
-     */
+    // Speaks a welcome greeting using the browser's speech synthesis API
     speakWelcome() {
         if (this.isMuted || !('speechSynthesis' in window)) return;
         try {

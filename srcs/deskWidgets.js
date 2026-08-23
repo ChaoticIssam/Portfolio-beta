@@ -1,8 +1,6 @@
 import * as THREE from 'three';
 
-/**
- * Creates the 7-segment B&W digital alarm clock on the base box face
- */
+// 7-segment digital alarm clock rendered onto the desk box face (HH:MM format)
 export function createDigitalClock({ boxMesh, scene }) {
 	const canvas = document.createElement('canvas');
 	canvas.width = 1024;
@@ -18,14 +16,13 @@ export function createDigitalClock({ boxMesh, scene }) {
 		side: THREE.DoubleSide,
 	});
 
-	// Compact, subtle digital clock panel (HH:MM without seconds)
-	// Box face is 4.2 wide x 1.08 tall. Geometry 1.9 x 0.58 keeps it subtle and proportionate.
+	// The box face is 4.2 wide x 1.08 tall — this geometry keeps it subtle and proportionate
 	const geometry = new THREE.PlaneGeometry(1.9, 0.58);
 	const timeMesh = new THREE.Mesh(geometry, material);
 
-	// Place flush on the front face of Plane003 (+X face):
+	// Flush on the front face of Plane003 (+X face)
 	timeMesh.position.set(2.105, 0.543, 0.45);
-	timeMesh.rotation.set(0, Math.PI / 2, 0); // normal faces outward along +X
+	timeMesh.rotation.set(0, Math.PI / 2, 0);
 
 	if (boxMesh) {
 		boxMesh.add(timeMesh);
@@ -33,9 +30,9 @@ export function createDigitalClock({ boxMesh, scene }) {
 		scene.add(timeMesh);
 	}
 
-	// 7-segment bitmask mapping for digits 0-9
+	// Segment bitmask for digits 0–9 (a, b, c, d, e, f, g)
 	const segmentMap = {
-		'0': [1, 1, 1, 1, 1, 1, 0], // a, b, c, d, e, f, g
+		'0': [1, 1, 1, 1, 1, 1, 0],
 		'1': [0, 1, 1, 0, 0, 0, 0],
 		'2': [1, 1, 0, 1, 1, 0, 1],
 		'3': [1, 1, 1, 1, 0, 0, 1],
@@ -48,11 +45,9 @@ export function createDigitalClock({ boxMesh, scene }) {
 		' ': [0, 0, 0, 0, 0, 0, 0]
 	};
 
-	// Draw a single 7-segment digit
 	const draw7Segment = (char, x, y, w, h, t, b, italicSkew = -0.08) => {
 		const mask = segmentMap[char] || segmentMap[' '];
 
-		// Segment polygons: a(top), b(top-right), c(bot-right), d(bot), e(bot-left), f(top-left), g(middle)
 		const segments = [
 			[[b, 0], [w - b, 0], [w - t, t], [t, t]],
 			[[w, b], [w, h / 2 - b], [w - t, h / 2 - t / 2], [w - t, t]],
@@ -85,7 +80,7 @@ export function createDigitalClock({ boxMesh, scene }) {
 				context.fill();
 				context.shadowBlur = 0;
 			} else {
-				// Faint unlit ghost segment (realistic LCD/LED clock)
+				// Faint ghost segment — realistic LCD/LED look
 				context.fillStyle = 'rgba(255, 255, 255, 0.05)';
 				context.fill();
 			}
@@ -94,7 +89,6 @@ export function createDigitalClock({ boxMesh, scene }) {
 		context.restore();
 	};
 
-	// Draw colon separator
 	const drawColon = (x, y, h, dotSize = 16, italicSkew = -0.08) => {
 		context.save();
 		context.translate(x, y);
@@ -111,7 +105,6 @@ export function createDigitalClock({ boxMesh, scene }) {
 		context.restore();
 	};
 
-	// Update digital clock (HH:MM format)
 	const updateTime = () => {
 		const date = new Date();
 		const hours = String(date.getHours()).padStart(2, '0');
@@ -119,11 +112,9 @@ export function createDigitalClock({ boxMesh, scene }) {
 
 		context.clearRect(0, 0, canvas.width, canvas.height);
 
-		// Pure black background
 		context.fillStyle = '#000000';
 		context.fillRect(0, 0, canvas.width, canvas.height);
 
-		// Minimal subtle white border
 		context.strokeStyle = 'rgba(255, 255, 255, 0.25)';
 		context.lineWidth = 3;
 		context.strokeRect(4, 4, canvas.width - 8, canvas.height - 8);
@@ -138,17 +129,14 @@ export function createDigitalClock({ boxMesh, scene }) {
 		let curX = Math.round((canvas.width - 572) / 2);
 		const curY = Math.round((canvas.height - digitH) / 2);
 
-		// Hours: HH
 		draw7Segment(hours[0], curX, curY, digitW, digitH, segThick, segBevel);
 		curX += digitW + digitGap;
 		draw7Segment(hours[1], curX, curY, digitW, digitH, segThick, segBevel);
 		curX += digitW + digitGap;
 
-		// Colon :
 		drawColon(curX + 12, curY, digitH, 16);
 		curX += colonW + digitGap;
 
-		// Minutes: MM
 		draw7Segment(minutes[0], curX, curY, digitW, digitH, segThick, segBevel);
 		curX += digitW + digitGap;
 		draw7Segment(minutes[1], curX, curY, digitW, digitH, segThick, segBevel);
@@ -171,9 +159,7 @@ export function createDigitalClock({ boxMesh, scene }) {
 	};
 }
 
-/**
- * Creates the Desk Lamp light switch button
- */
+// Desk lamp toggle button — a simple clickable circle near the lamp
 export function createLightSwitch({ scene, raycaster }) {
 	const canvas = document.createElement('canvas');
 	canvas.width = 128;
@@ -190,7 +176,6 @@ export function createLightSwitch({ scene, raycaster }) {
 	const geometry = new THREE.CircleGeometry(2, 32);
 	const switchMesh = new THREE.Mesh(geometry, material);
 
-	// Position near the lamp
 	switchMesh.position.set(45, 20, -40);
 	switchMesh.rotation.y = Math.PI * 0.25;
 
@@ -237,9 +222,7 @@ export function createLightSwitch({ scene, raycaster }) {
 	};
 }
 
-/**
- * Creates the Sound Mute / Unmute switch button on the base box
- */
+// Sound mute/unmute button on the base box face
 export function createSoundSwitch({ boxMesh, scene, raycaster, soundManager }) {
 	const canvas = document.createElement('canvas');
 	canvas.width = 256;
@@ -255,13 +238,11 @@ export function createSoundSwitch({ boxMesh, scene, raycaster, soundManager }) {
 		side: THREE.DoubleSide,
 	});
 
-	// Radius 0.18 in local units of Plane003 (scales by 10x to 1.8 in world space)
 	const geometry = new THREE.CircleGeometry(0.18, 32);
 	const soundMesh = new THREE.Mesh(geometry, material);
 
-	// Place on the right side of the front face of Plane003:
 	soundMesh.position.set(2.106, 0.543, -1.15);
-	soundMesh.rotation.set(0, Math.PI / 2, 0); // faces outward along +X
+	soundMesh.rotation.set(0, Math.PI / 2, 0);
 
 	if (boxMesh) {
 		boxMesh.add(soundMesh);
@@ -272,13 +253,11 @@ export function createSoundSwitch({ boxMesh, scene, raycaster, soundManager }) {
 	const updateSoundSwitch = (isMuted, isHovered = false) => {
 		context.clearRect(0, 0, canvas.width, canvas.height);
 
-		// Background circular badge - matte black
 		context.beginPath();
 		context.arc(128, 128, isHovered ? 122 : 112, 0, Math.PI * 2);
 		context.fillStyle = '#000000';
 		context.fill();
 
-		// Clean White Border Ring
 		context.lineWidth = isHovered ? 8 : 5;
 		context.strokeStyle = isHovered ? '#ffffff' : 'rgba(255, 255, 255, 0.4)';
 		if (isHovered) {
@@ -288,7 +267,6 @@ export function createSoundSwitch({ boxMesh, scene, raycaster, soundManager }) {
 		context.stroke();
 		context.shadowBlur = 0;
 
-		// Speaker vector icon in crisp white
 		const iconColor = isMuted ? '#a1a1aa' : '#ffffff';
 		context.fillStyle = iconColor;
 		context.strokeStyle = iconColor;
@@ -296,12 +274,10 @@ export function createSoundSwitch({ boxMesh, scene, raycaster, soundManager }) {
 		context.lineCap = 'round';
 		context.lineJoin = 'round';
 
-		// Speaker back rectangle
 		context.beginPath();
 		context.rect(66, 106, 26, 44);
 		context.fill();
 
-		// Speaker cone trapezoid
 		context.beginPath();
 		context.moveTo(92, 106);
 		context.lineTo(132, 74);
@@ -311,17 +287,14 @@ export function createSoundSwitch({ boxMesh, scene, raycaster, soundManager }) {
 		context.fill();
 
 		if (!isMuted) {
-			// Inner sound wave arc
 			context.beginPath();
 			context.arc(126, 128, 32, -Math.PI * 0.28, Math.PI * 0.28, false);
 			context.stroke();
 
-			// Outer sound wave arc
 			context.beginPath();
 			context.arc(126, 128, 56, -Math.PI * 0.28, Math.PI * 0.28, false);
 			context.stroke();
 		} else {
-			// Diagonal strike-through line
 			context.strokeStyle = '#ef4444';
 			context.lineWidth = 9;
 			context.beginPath();

@@ -16,7 +16,7 @@ export class Portfolio {
 		this.floor = null;
 		this.justEntered = true;
 
-		// Model and widgets
+		// 3D model and screen state
 		this.computerModel = null;
 		this.screenMesh = null;
 		this.boxMesh = null;
@@ -30,27 +30,27 @@ export class Portfolio {
 		this.soundSwitchWidget = null;
 		this.isLightOn = true;
 
-		// Raycasting
+		// Mouse raycaster for picking objects in the scene
 		this.raycaster = new THREE.Raycaster();
 		this.mouse = new THREE.Vector2();
 
-		// Camera viewpoints
+		// Two camera positions: the starting overview and the zoomed-in CRT view
 		this.initialCameraPosition = new THREE.Vector3(140, 30, 56);
 		this.zoomedCameraPosition = new THREE.Vector3(60, 25, 28);
 		this.isZoomed = false;
 
-		// Dimensions & Responsive
+		// Viewport dimensions, updated on window resize
 		this.pageWidth = window.innerWidth;
 		this.pageHeight = window.innerHeight;
 
-		// State
+		// Runtime flags and texture update queue
 		this.isDestroyed = false;
 		this.isUpdatingTexture = false;
 		this.textureUpdateTimeout = null;
 		this.currentSection = 'home';
 		this.screenOverlay = null;
 
-		// Bind event handlers
+		// Bind methods so they work correctly as event listeners
 		this.onWindowResize = this.onWindowResize.bind(this);
 		this.animate = this.animate.bind(this);
 		this.handleHover = this.handleHover.bind(this);
@@ -83,18 +83,18 @@ export class Portfolio {
 			const screenCenter = new THREE.Vector3(5, 15, 5);
 			this.camera.lookAt(screenCenter);
 
-			// Setup Lighting
+			// Wire up scene lighting
 			const lights = setupLighting({ scene: this.scene });
 			this.ambientLight = lights.ambientLight;
 			this.bulbLight = lights.bulbLight;
 
-			// Desk Lamp switch
+			// Create the desk lamp toggle button
 			this.lightSwitchWidget = createLightSwitch({
 				scene: this.scene,
 				raycaster: this.raycaster
 			});
 
-			// Setup OrbitControls
+			// Orbit controls — no zoom or pan, just rotation with damping
 			this.controls = new OrbitControls(this.camera, this.renderer.domElement);
 			this.controls.target.set(5, 0, 5);
 			this.controls.enableDamping = true;
@@ -104,7 +104,7 @@ export class Portfolio {
 			this.controls.maxPolarAngle = Math.PI / 2;
 			this.controls.enablePan = false;
 
-			// Attach DOM Events
+			// Wire up mouse, touch, and hover event listeners
 			this.renderer.domElement.addEventListener('click', this.handleClick);
 			this.renderer.domElement.addEventListener('mousemove', this.handleHover);
 			this.renderer.domElement.addEventListener('touchstart', this.handleTouch.bind(this), { passive: false });
@@ -115,7 +115,7 @@ export class Portfolio {
 			document.body.appendChild(this.renderer.domElement);
 			window.addEventListener('resize', this.onWindowResize);
 
-			// Load GLTF Model
+			// Stream in the 3D desk scene (41 MB GLTF)
 			const loader = new GLTFLoader();
 			const loadTimeout = setTimeout(() => {
 				console.warn('Model loading timeout');
@@ -141,7 +141,7 @@ export class Portfolio {
 									this.controls.target.copy(center);
 									this.camera.lookAt(center);
 
-									// Deferred screen texture rendering
+									// Retry rendering the React content onto the CRT texture until the DOM is ready
 									const tryRender = (delay, attempts = 0) => {
 										setTimeout(() => {
 											this.portfolioContent = document.getElementById('portfolioContent');
@@ -155,7 +155,7 @@ export class Portfolio {
 									};
 									tryRender(800);
 
-									// CRT screen spotlight glow
+									// Spotlight for the CRT screen glow
 									const screenLight = new THREE.SpotLight(0xffffff, 3, 50, Math.PI / 4, 0.5, 1);
 									screenLight.position.set(
 										this.screenMesh.position.x,
@@ -179,7 +179,7 @@ export class Portfolio {
 						gltf.scene.scale.set(10, 10, 10);
 						this.scene.add(gltf.scene);
 
-						// Mount digital clock and sound switch directly on the base box
+						// Attach the clock and sound widgets onto the base box in the scene
 						this.clockWidget = createDigitalClock({
 							boxMesh: this.boxMesh,
 							scene: this.scene
@@ -518,7 +518,7 @@ export class Portfolio {
 
 		this.raycaster.setFromCamera(this.mouse, this.camera);
 
-		// Lamp Switch
+		// Lamp switch click
 		if (this.lightSwitchWidget?.mesh) {
 			const hits = this.raycaster.intersectObject(this.lightSwitchWidget.mesh);
 			if (hits.length > 0) {
@@ -533,7 +533,7 @@ export class Portfolio {
 			}
 		}
 
-		// Sound Switch
+		// Sound mute toggle click
 		if (this.soundSwitchWidget?.mesh) {
 			const hits = this.raycaster.intersectObject(this.soundSwitchWidget.mesh);
 			if (hits.length > 0) {
@@ -546,7 +546,7 @@ export class Portfolio {
 			}
 		}
 
-		// Screen Click
+		// Click on the CRT screen itself — convert UV to DOM coords and dispatch a click
 		const screenHits = this.raycaster.intersectObject(this.screenMesh);
 		if (screenHits.length > 0) {
 			const uv = screenHits[0].uv;
@@ -634,7 +634,7 @@ export class Portfolio {
 			}, 3200)
 			.start();
 
-		// CRT Ignition Flash
+		// Brief CRT ignition flash on screen power-on
 		if (this.screenMaterial) {
 			this.screenMaterial.color.setHex(0x000000);
 			setTimeout(() => {
@@ -653,7 +653,7 @@ export class Portfolio {
 			}, 500);
 		}
 
-		// Lamp warm-up flicker
+		// Desk lamp flicker on startup — simulates a warming filament
 		if (this.bulbLight && this.isLightOn) {
 			this.bulbLight.intensity = 0;
 			setTimeout(() => { if (this.bulbLight) this.bulbLight.intensity = 140; }, 350);
