@@ -85,6 +85,19 @@ body {
     font-family: 'Arial', sans-serif;
 }
 
+body.mobile-mode {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    background-color: #07090e;
+}
+
+body.mobile-mode #root {
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+    z-index: 10;
+}
+
 #biosScreen {
 	position: fixed;
 	top: 0;
