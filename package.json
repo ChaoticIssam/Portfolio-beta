@@ -1,6 +1,6 @@
 {
   "name": "portfolio-beta",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "3D portfolio using Three.js and React",
   "type": "module",
   "scripts": {
