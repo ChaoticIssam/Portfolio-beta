@@ -1,13 +1,91 @@
-# Dependencies
+# ─── Dependencies ─────────────────────────────────────────────────────────────
 node_modules/
+.pnp
+.pnp.js
+.yarn/install-state.gz
 
-# Production build & cache
+# ─── Build output ─────────────────────────────────────────────────────────────
 dist/
+dist-ssr/
+build/
 .vite/
 .tmp/
+*.local
 
-# OS & Environment
-.DS_Store
-*.log
+# ─── Environment & Secrets ────────────────────────────────────────────────────
 .env
-.env.local
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.jks
+*.secret
+secrets/
+credentials/
+
+# ─── API keys / tokens that might slip in ─────────────────────────────────────
+.vercel/.env*
+.netlify/
+*.token
+*.auth
+
+# ─── OS generated ─────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ─── Editor & IDE configs ─────────────────────────────────────────────────────
+.vscode/settings.json
+.vscode/launch.json
+.vscode/*.code-workspace
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ─── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ─── Testing & Coverage ───────────────────────────────────────────────────────
+coverage/
+.nyc_output/
+*.lcov
+
+# ─── Docker runtime ───────────────────────────────────────────────────────────
+*.pid
+*.seed
+*.pid.lock
+
+# ─── Scratch / Dev notes ──────────────────────────────────────────────────────
+progress.txt
+colorsHex/
+*.bak
+*.swp
+*.tmp
+*.draft
+
+# ─── Package manager lockfile caches ──────────────────────────────────────────
+.npm/
+.pnpm-store/
+
+# ─── TypeScript cache ─────────────────────────────────────────────────────────
+*.tsbuildinfo
+
+# ─── Storybook ────────────────────────────────────────────────────────────────
+storybook-static/
