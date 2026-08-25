@@ -274,11 +274,11 @@ export class Portfolio {
 			});
 
 			overlay.addEventListener('mouseenter', () => {
-				if (!this.isZoomed) this.zoomToScreen();
+				if (this.isEntranceComplete && !this.isZoomed) this.zoomToScreen();
 			});
 
 			overlay.addEventListener('mouseleave', (e) => {
-				if (this.isZoomed && (!e.relatedTarget || !overlay.contains(e.relatedTarget))) {
+				if (this.isEntranceComplete && this.isZoomed && (!e.relatedTarget || !overlay.contains(e.relatedTarget))) {
 					this.zoomOutFromScreen();
 				}
 			});
@@ -287,7 +287,10 @@ export class Portfolio {
 	}
 
 	updateScreenOverlayPosition() {
-		if (!this.screenOverlay || !this.screenMesh || !this.camera) return;
+		if (!this.isEntranceComplete || !this.screenOverlay || !this.screenMesh || !this.camera) {
+			if (this.screenOverlay) this.screenOverlay.style.display = 'none';
+			return;
+		}
 
 		try {
 			if (!this.screenMesh.geometry.boundingBox) {
@@ -336,7 +339,7 @@ export class Portfolio {
 	}
 
 	zoomToScreen() {
-		if (this.isZoomed || !this.screenMesh || !this.camera || !this.controls) return;
+		if (!this.isEntranceComplete || this.isZoomed || !this.screenMesh || !this.camera || !this.controls) return;
 		this.isZoomed = true;
 
 		const box = new THREE.Box3().setFromObject(this.screenMesh);
@@ -360,7 +363,7 @@ export class Portfolio {
 	}
 
 	zoomOutFromScreen() {
-		if (!this.isZoomed || !this.camera || !this.controls) return;
+		if (!this.isEntranceComplete || !this.isZoomed || !this.camera || !this.controls) return;
 		this.isZoomed = false;
 
 		const targetPosition = new THREE.Vector3(5, 0, 5);
